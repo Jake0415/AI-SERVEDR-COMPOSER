@@ -56,6 +56,7 @@
 | 견적서 출력 (F007) | O | O | O |
 | 낙찰 이력 (F008, F009) | O | O | 본인만 |
 | 대시보드 (F012) | O | O | O |
+| 거래처 관리 (F020) | O | O | 조회만 |
 | 고급 검색/필터링 (F014) | O | O | O |
 | 견적 공유/협업 (F015) | O | O | 본인 건만 |
 | 실시간 알림 (F016) | O | O | O |
@@ -77,8 +78,8 @@
 | **F004** | RFP AI 파싱 | 업로드된 RFP에서 서버 사양 요구사항(CPU, 메모리, 스토리지, 네트워크 등)을 AI로 자동 추출 | 핵심 차별화 기능 | RFP 업로드 페이지 |
 | **F005** | 3가지 견적안 자동 생성 | 수익성 중심안(마진 최대화), 규격 충족안(RFP 정확 매칭), 성능 향상안(10~30% 업스펙)을 자동 생성 | 핵심 비즈니스 가치 | 견적 생성 페이지 |
 | **F006** | 마진 시뮬레이션 | 부품별 마진율 슬라이더 조절, 목표 마진 역산, 견적안 간 시나리오 비교 | 영업 의사결정 핵심 도구 | 견적 생성 페이지 |
-| **F007** | 견적서 출력 | 나라장터 양식/자사 양식 선택, PDF/Excel 형식 다운로드 | 최종 산출물 제공 | 견적 이력 페이지 |
-| **F008** | 낙찰 결과 기록 | 견적별 낙찰/실패 결과와 사유를 기록 | 데이터 축적으로 경쟁력 강화 | 견적 이력 페이지 |
+| **F007** | 견적서 발행 및 출력 | 견적서 작성(Draft) → 내부 검토 → 승인 → 발행(Published) → 전달 워크플로우. 견적번호 자동 채번, 유효기간 관리(기본 30일), 납품/결제 조건 입력, 발행사 정보+거래처 정보+직인 자동 삽입. 견적서 개정(Rev.1, Rev.2) 버전 관리. 나라장터/자사 양식 선택, PDF/Excel 생성. 품목 구분: H/W(부품), S/W(라이선스), 설치/구축 서비스, 유지보수 | 견적서 발행의 전체 프로세스 | 견적 이력 페이지 |
+| **F008** | 낙찰 결과 기록 | 견적별 수주(Won)/실주(Lost)/보류(Pending)/만료(Expired) 상태 추적. 실주 사유 기록, 유효기간 만료 자동 상태 변경 | 데이터 축적으로 경쟁력 강화 | 견적 이력 페이지 |
 | **F009** | 낙찰 이력 대시보드 | 낙찰률, 평균 마진율, 카테고리별 성과 등 경쟁력 분석 대시보드 | 영업 전략 개선 인사이트 | 낙찰 이력 페이지 |
 
 ### 2. 플랫폼 기능
@@ -100,6 +101,7 @@
 | **F017** | 시스템 설정 | 회사 로고, 견적서 양식 커스터마이징, 기본 마진율 설정, 견적 번호 채번 규칙 | 회사별 맞춤 운영 필수 | 시스템 설정 페이지 |
 | **F018** | 감사 로그 | 주요 액션 이력 추적 (로그인, 가격 변경, 견적 생성/수정/삭제, 사용자 추가/삭제 등). 날짜/사용자/액션 타입별 필터링 | 보안 및 운영 감사 필수 | 감사 로그 페이지 |
 | **F019** | 데이터 백업/복원 | 부품 DB, 견적 이력, 가격 이력을 엑셀/JSON으로 백업 다운로드. 백업 파일로부터 복원 기능 | 데이터 안전성 및 이관 지원 | 시스템 설정 페이지 |
+| **F020** | 거래처 관리 | 거래처(고객사) 등록/수정/삭제. 회사명, 사업자번호, 대표자, 주소, 업태/종목, 담당자(복수) 관리. 자주 거래처 즐겨찾기, 거래 이력 조회, 엑셀 일괄 등록. 견적서 작성 시 거래처 선택하여 수신자 정보 자동 삽입 | 견적서 발행의 필수 데이터 | 거래처 관리 페이지 |
 
 ### 4. 향후 확장 기능 (v2)
 
@@ -130,6 +132,8 @@
 │   └── 기능: F005, F006 (3가지 견적안, 마진 시뮬레이션)
 ├── 📋 견적 이력
 │   └── 기능: F007, F008 (견적서 출력, 낙찰 결과 기록)
+├── 🏢 거래처 관리
+│   └── 기능: F020 (거래처 등록/관리, 담당자, 거래이력)
 ├── 📈 낙찰 이력
 │   └── 기능: F009 (낙찰률 대시보드, 경쟁력 분석)
 ├── ⚙️ 사용자 관리 (슈퍼어드민 전용)
@@ -301,12 +305,27 @@
 
 ## 데이터 모델
 
-### tenants (테넌트/회사 정보)
+### tenants (테넌트/회사 정보 — 견적서 발행사 정보 포함)
 | 필드 | 설명 | 타입/관계 |
 |------|------|----------|
 | id | 고유 식별자 | UUID |
-| company_name | 회사명 | TEXT |
+| company_name | 회사명(상호) | TEXT |
 | business_number | 사업자등록번호 | TEXT |
+| ceo_name | 대표자명 | TEXT |
+| address | 사업장 소재지 | TEXT |
+| business_type | 업태 | TEXT |
+| business_item | 종목 | TEXT |
+| phone | 대표 전화번호 | TEXT |
+| fax | 팩스번호 | TEXT, NULLABLE |
+| email | 대표 이메일 | TEXT |
+| logo_url | 회사 로고 이미지 경로 | TEXT, NULLABLE |
+| seal_url | 직인/도장 이미지 경로 | TEXT, NULLABLE |
+| bank_name | 입금 은행명 | TEXT, NULLABLE |
+| bank_account | 입금 계좌번호 | TEXT, NULLABLE |
+| bank_holder | 예금주 | TEXT, NULLABLE |
+| default_validity_days | 견적 기본 유효기간 (일) | INTEGER DEFAULT 30 |
+| default_payment_terms | 기본 결제조건 | TEXT, NULLABLE |
+| quotation_prefix | 견적번호 접두사 (예: Q, EST) | TEXT DEFAULT 'Q' |
 | plan_type | 요금제 (free/basic/pro/enterprise) | TEXT |
 | created_at | 생성일시 | TIMESTAMP |
 
@@ -415,6 +434,41 @@
 | status | 처리 상태 (processing/completed/failed) | TEXT |
 | created_at | 업로드 일시 | TIMESTAMP |
 
+### customers (거래처/고객사)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 소속 테넌트 | -> tenants.id |
+| company_name | 회사명 | TEXT |
+| business_number | 사업자등록번호 | TEXT, NULLABLE |
+| ceo_name | 대표자명 | TEXT, NULLABLE |
+| address | 주소 | TEXT, NULLABLE |
+| business_type | 업태 | TEXT, NULLABLE |
+| business_item | 종목 | TEXT, NULLABLE |
+| phone | 대표 전화번호 | TEXT, NULLABLE |
+| fax | 팩스번호 | TEXT, NULLABLE |
+| email | 대표 이메일 | TEXT, NULLABLE |
+| customer_type | 고객 유형 (public/private/other) | TEXT |
+| payment_terms | 결제조건 | TEXT, NULLABLE |
+| notes | 특이사항/메모 | TEXT, NULLABLE |
+| is_frequent | 자주 거래 여부 | BOOLEAN DEFAULT false |
+| created_at | 등록일 | TIMESTAMP |
+
+### customer_contacts (거래처 담당자)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| customer_id | 거래처 | -> customers.id |
+| name | 담당자명 | TEXT |
+| department | 부서 | TEXT, NULLABLE |
+| position | 직책 | TEXT, NULLABLE |
+| phone | 직통 전화 | TEXT, NULLABLE |
+| mobile | 휴대전화 | TEXT, NULLABLE |
+| email | 이메일 | TEXT, NULLABLE |
+| is_primary | 주 담당자 여부 | BOOLEAN DEFAULT false |
+
 ### rfp_documents (RFP 문서)
 | 필드 | 설명 | 타입/관계 |
 |------|------|----------|
@@ -432,29 +486,53 @@
 |------|------|----------|
 | id | 고유 식별자 | UUID |
 | tenant_id | 소속 테넌트 | -> tenants.id |
-| rfp_id | RFP 문서 | -> rfp_documents.id |
+| rfp_id | RFP 문서 | -> rfp_documents.id, NULLABLE |
+| customer_id | 거래처 | -> customers.id |
+| quotation_number | 견적번호 (자동 채번) | TEXT, UNIQUE |
+| revision | 개정 번호 (0=초판, 1=Rev.1...) | INTEGER DEFAULT 0 |
+| parent_quotation_id | 개정 시 원본 견적 | -> quotations.id, NULLABLE |
 | quotation_type | 견적 유형 (profitability/spec_match/performance) | TEXT |
 | total_cost | 총 원가 | INTEGER |
 | total_supply | 총 공급가 | INTEGER |
-| status | 상태 (draft/confirmed/won/lost) | TEXT |
+| vat | 부가가치세 (공급가의 10%) | INTEGER |
+| total_amount | 견적 총액 (공급가 + VAT) | INTEGER |
+| status | 상태 (draft/review/approved/published/won/lost/pending/expired) | TEXT |
+| validity_date | 유효기간 만료일 | DATE |
+| delivery_terms | 납품조건 | TEXT, NULLABLE |
+| delivery_date | 예상 납기일 | DATE, NULLABLE |
+| payment_terms | 결제조건 | TEXT, NULLABLE |
+| notes | 비고/특기사항 | TEXT, NULLABLE |
+| created_by | 작성자 | -> users.id |
+| approved_by | 승인자 | -> users.id, NULLABLE |
+| published_at | 발행 일시 | TIMESTAMP, NULLABLE |
+| created_at | 작성 일시 | TIMESTAMP |
 
 ### quotation_items (견적 항목)
 | 필드 | 설명 | 타입/관계 |
 |------|------|----------|
 | id | 고유 식별자 | UUID |
 | quotation_id | 견적 | -> quotations.id |
-| part_id | 부품 | -> parts.id |
+| item_type | 품목 구분 (hardware/software/service/maintenance) | TEXT |
+| part_id | 부품 (H/W일 때) | -> parts.id, NULLABLE |
+| item_name | 품명 (서비스/S/W 등 직접 입력) | TEXT |
+| item_spec | 규격/상세 | TEXT, NULLABLE |
 | quantity | 수량 | INTEGER |
+| unit | 단위 (EA/식/년 등) | TEXT DEFAULT 'EA' |
+| unit_cost_price | 단위 원가 | INTEGER |
 | unit_supply_price | 단위 공급가 | INTEGER |
+| amount | 금액 (수량 x 공급가) | INTEGER |
 | margin_rate | 마진율 (%) | DECIMAL |
+| sort_order | 정렬 순서 | INTEGER |
 
 ### bid_results (낙찰 결과)
 | 필드 | 설명 | 타입/관계 |
 |------|------|----------|
 | id | 고유 식별자 | UUID |
 | quotation_id | 견적 | -> quotations.id |
-| result | 결과 (won/lost) | TEXT |
-| reason | 사유 | TEXT |
+| result | 결과 (won/lost/pending/expired) | TEXT |
+| reason | 사유 | TEXT, NULLABLE |
+| competitor_price | 경쟁사 낙찰가 (알 수 있는 경우) | INTEGER, NULLABLE |
+| recorded_by | 기록한 사용자 | -> users.id |
 | recorded_at | 기록일시 | TIMESTAMP |
 
 ---
