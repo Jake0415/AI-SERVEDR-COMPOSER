@@ -64,8 +64,8 @@
 
 | ID | 기능명 | 설명 | MVP 필수 이유 | 관련 페이지 |
 |----|--------|------|---------------|------------|
-| **F001** | 부품 DB 등록/관리 | 서버/인프라 부품 카테고리별 부품 정보와 원가/공급가를 등록 및 관리. 기본 14개 카테고리 제공(**서버 부품**: CPU, 메모리, SSD, HDD, NIC, RAID, GPU, PSU, 메인보드, 섀시, HBA / **네트워크·인프라**: 스위치, 광 트랜시버, 케이블). 슈퍼어드민/관리자가 카테고리를 추가/삭제 가능 | 견적 생성의 기초 데이터 | 부품 관리 페이지 |
-| **F002** | 부품 가격 관리 | 부품별 리스트가, 시장가, 원가(AES-256 암호화), 공급가를 등록하고 마진 자동 계산 | 견적 산출의 핵심 데이터 | 부품 관리 페이지 |
+| **F001** | 부품 DB 등록/관리 | 서버/인프라 부품 카테고리별 부품 정보와 원가/공급가를 등록 및 관리. 기본 14개 카테고리 제공. 카테고리 추가/삭제 가능. **엑셀 일괄 업로드**: 규격 템플릿으로 부품+가격 일괄 등록, 중복 처리(건너뛰기/덮어쓰기), 오류 행 리포트 다운로드. 엑셀 템플릿 동적 생성(현재 카테고리 반영) | 견적 생성의 기초 데이터 + 초기 DB 구축 필수 | 부품 관리 페이지 |
+| **F002** | 부품 가격 관리 | 부품별 리스트가, 시장가, 원가(AES-256 암호화), 공급가를 등록하고 마진 자동 계산. **가격 변동 이력**: 수동 수정/엑셀 업로드 시 변경 전후 자동 기록. **가격 변동 시각화**: 부품별 가격 추이 차트(4가지 가격 시계열). **자동 스냅샷**: 매일 설정 시간에 전체 가격 스냅샷 저장(보관 기간 설정 가능) | 견적 산출의 핵심 데이터 + 가격 추세 분석 | 부품 관리 페이지 |
 | **F003** | RFP 파일 업로드 및 이력 관리 | PDF, HWP, DOCX 형식의 RFP 문서를 업로드하고, 업로드 이력을 목록으로 관리. 기존 RFP 선택 시 재견적 생성 가능 | 견적 자동화의 시작점 + 문서 이력 추적 | RFP 업로드 페이지 |
 | **F004** | RFP AI 파싱 | 업로드된 RFP에서 서버 사양 요구사항(CPU, 메모리, 스토리지, 네트워크 등)을 AI로 자동 추출 | 핵심 차별화 기능 | RFP 업로드 페이지 |
 | **F005** | 3가지 견적안 자동 생성 | 수익성 중심안(마진 최대화), 규격 충족안(RFP 정확 매칭), 성능 향상안(10~30% 업스펙)을 자동 생성 | 핵심 비즈니스 가치 | 견적 생성 페이지 |
@@ -298,6 +298,8 @@
 | model_name | 모델명 | TEXT |
 | manufacturer | 제조사 | TEXT |
 | specs | 주요 사양 (JSON) | JSONB |
+| is_deleted | 삭제 여부 (soft delete) | BOOLEAN DEFAULT false |
+| deleted_at | 삭제 일시 | TIMESTAMP, NULLABLE |
 
 ### part_prices (부품 가격)
 | 필드 | 설명 | 타입/관계 |
@@ -308,6 +310,64 @@
 | market_price | 시장가 (유통 시세) | INTEGER |
 | cost_price | 원가 (매입가, AES-256 암호화) | BYTEA |
 | supply_price | 공급가 (판매가) | INTEGER |
+
+### part_price_history (가격 변동 이력)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| part_id | 부품 | -> parts.id |
+| tenant_id | 소속 테넌트 | -> tenants.id |
+| change_type | 변경 유형 (manual/excel_upload/snapshot) | TEXT |
+| list_price_before | 변경 전 리스트가 | INTEGER, NULLABLE |
+| list_price_after | 변경 후 리스트가 | INTEGER |
+| market_price_before | 변경 전 시장가 | INTEGER, NULLABLE |
+| market_price_after | 변경 후 시장가 | INTEGER |
+| cost_price_before | 변경 전 원가 (암호화) | BYTEA, NULLABLE |
+| cost_price_after | 변경 후 원가 (암호화) | BYTEA |
+| supply_price_before | 변경 전 공급가 | INTEGER, NULLABLE |
+| supply_price_after | 변경 후 공급가 | INTEGER |
+| changed_by | 변경한 사용자 | -> users.id |
+| change_reason | 변경 사유 | TEXT, NULLABLE |
+| created_at | 변경 일시 | TIMESTAMP |
+
+### price_snapshots (가격 스냅샷)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 소속 테넌트 | -> tenants.id |
+| snapshot_date | 스냅샷 날짜 | DATE |
+| snapshot_data | 전체 가격 데이터 (JSON) | JSONB |
+| part_count | 스냅샷 시점 부품 수 | INTEGER |
+| created_at | 생성 일시 | TIMESTAMP |
+
+### price_snapshot_settings (스냅샷 설정)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 소속 테넌트 (UNIQUE) | -> tenants.id |
+| is_enabled | 자동 스냅샷 활성화 | BOOLEAN DEFAULT true |
+| snapshot_hour | 실행 시각 (0-23, KST) | INTEGER DEFAULT 2 |
+| retention_months | 보관 기간 (개월) | INTEGER DEFAULT 12 |
+| last_snapshot_at | 마지막 스냅샷 일시 | TIMESTAMP, NULLABLE |
+| updated_at | 설정 변경 일시 | TIMESTAMP |
+
+### excel_upload_logs (엑셀 업로드 이력)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 소속 테넌트 | -> tenants.id |
+| uploaded_by | 업로드한 사용자 | -> users.id |
+| file_name | 원본 파일명 | TEXT |
+| total_rows | 전체 행 수 | INTEGER |
+| success_rows | 성공 행 수 | INTEGER |
+| failed_rows | 실패 행 수 | INTEGER |
+| error_details | 행별 오류 상세 (JSON) | JSONB, NULLABLE |
+| status | 처리 상태 (processing/completed/failed) | TEXT |
+| created_at | 업로드 일시 | TIMESTAMP |
 
 ### rfp_documents (RFP 문서)
 | 필드 | 설명 | 타입/관계 |
