@@ -15,7 +15,8 @@
       "mcp__slack__slack_list_channels",
       "mcp__slack__slack_post_message",
       "mcp__slack__slack_get_channel_history",
-      "mcp__slack__slack_get_thread_replies"
+      "mcp__slack__slack_get_thread_replies",
+      "Bash(ls -la \"c:\\\\PJ-Source\\\\AI-SERVEDR-COMPOSER\\\\lib\"\" 2>/dev/null || echo \"lib directory check \")"
     ],
     "deny": [],
     "ask": []
