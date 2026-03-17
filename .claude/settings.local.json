@@ -2,9 +2,55 @@
   "permissions": {
     "allow": [
       "WebFetch",
-      "Bash"
+      "Bash",
+      "Bash(npm run:*)",
+      "mcp__sequential-thinking",
+      "mcp__shadcn",
+      "mcp__shadcn__search_items_in_registries",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "mcp__slack__slack_list_channels",
+      "mcp__slack__slack_post_message",
+      "mcp__slack__slack_get_channel_history",
+      "mcp__slack__slack_get_thread_replies"
     ],
     "deny": [],
     "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "postToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "npx tsc --noEmit --pretty 2>&1 | head -20"
+      }
+    ],
+    "stop": [
+      {
+        "command": "echo '--- 품질 확인 ---' && npx tsc --noEmit 2>&1 | tail -5 && echo '---' && grep -rn 'console\\.log' --include='*.ts' --include='*.tsx' app/ components/ lib/ 2>/dev/null | head -5 && echo '확인 완료'"
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/notification-hook.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/stop-hook.sh"
+          }
+        ]
+      }
+    ]
   }
 }

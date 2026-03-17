@@ -81,3 +81,112 @@ npx shadcn@latest add [component-name]
 - 한국어 라벨(라이트, 다크, 시스템)이 포함된 테마 토글
 - 한국어 설명이 포함된 환경변수
 - 한국어로 작성된 README 및 문서
+
+---
+
+## 코딩 스타일 규칙
+
+### 일반 원칙
+
+- **불변성**: 항상 새 객체를 생성하고, 기존 객체를 직접 변경하지 않음 (spread 연산자 활용)
+- **파일 크기**: 200~400줄 권장, 최대 800줄
+- **함수 길이**: 50줄 이내
+- **중첩 깊이**: 최대 4단계
+- **가독성**: 명확한 변수/함수명 사용, 약어 지양
+
+### TypeScript 규칙
+
+- `any` 사용 금지 → `unknown` + 타입 가드로 안전하게 처리
+- `interface`: 확장 가능한 객체 형태에 사용
+- `type`: 유니언, 인터섹션, 매핑 타입에 사용
+- 문자열 리터럴 유니언을 `enum` 대신 선호
+- 내보내는 함수, 공용 유틸리티, 클래스 공개 메서드에는 명시적 타입 지정
+- `React.FC` 사용 지양, 일반 함수 컴포넌트 선호
+- React Props는 `{ComponentName}Props` 인터페이스로 정의
+- `console.log` 프로덕션 코드에 사용 금지
+- 입력 검증: Zod 스키마 사용 권장
+- 비동기 처리: async/await + try-catch 블록 사용
+
+### API 응답 형식
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: { code: string; message: string };
+  meta?: { page: number; total: number };
+}
+```
+
+### 커스텀 Hook 패턴
+
+- Hook 이름은 `use` 접두사 필수
+- 단일 책임 원칙 준수
+- 반환 타입 명시적 정의
+
+### Repository 패턴 (데이터 접근 추상화)
+
+- `findAll`, `findById`, `create`, `update`, `delete` 메서드 구조
+- 데이터 소스와 비즈니스 로직 분리
+
+## 보안 규칙
+
+- **시크릿 하드코딩 절대 금지**: API 키, 비밀번호, 토큰은 환경변수 또는 시크릿 매니저 사용
+- `NEXT_PUBLIC_` 접두사는 진정 공개되어도 무방한 변수에만 사용
+- 커밋 전 `.env.local`, 시크릿 파일 포함 여부 반드시 확인
+- SQL 인젝션 방지: 파라미터화 쿼리 사용
+- XSS 방지: 사용자 입력 HTML 새니타이징
+- `dangerouslySetInnerHTML` 명시적 보안 검토 없이 사용 금지
+- CSRF 보호 및 레이트 리미팅 적용
+- 에러 메시지에 내부 구현 정보 노출 금지
+- 서버 측에서 모든 사용자 입력 검증 (Server Actions, API Routes)
+
+## 테스트 요구사항
+
+- **최소 80% 테스트 커버리지** 목표
+- **TDD 워크플로우**: 실패하는 테스트 먼저 작성 → 최소 구현 → 리팩터링
+- 테스트 파일 명명: `*.test.ts` / `*.test.tsx` (소스 파일과 같은 위치에 배치)
+- 유닛 테스트, 통합 테스트, E2E 테스트 구분하여 작성
+- 금융 계산, 인증, 보안 관련 코드는 **100% 커버리지 필수**
+- E2E 테스트 프레임워크: Playwright 권장
+- 테스트 프레임워크: Vitest 권장
+
+## Git 워크플로우
+
+### 커밋 메시지 형식
+
+프로젝트 기존 이모지 스타일을 따릅니다:
+
+- 🚀 새 기능 (feat)
+- 🔧 수정/설정 변경 (fix/chore)
+- 📝 문서 (docs)
+- 🎨 스타일/UI (style)
+- ♻️ 리팩터링 (refactor)
+- ✅ 테스트 (test)
+- ⚡ 성능 (perf)
+
+### PR 워크플로우
+
+- PR 리뷰 시 최신 커밋만이 아닌 **전체 커밋 히스토리** 확인
+- `git diff [base-branch]...HEAD`로 모든 변경사항 검토
+- 새 브랜치 push 시 `-u` 플래그 사용
+- 커밋 전 `/verify` 실행 권장
+
+## Next.js 패턴
+
+- **Server Components 기본**: `"use client"` 지시자는 필요한 경우에만 추가
+- **데이터 페칭**: Server Component에서 직접 수행 (`useEffect` 지양)
+- **라우트 세그먼트**: `loading.tsx`, `error.tsx` 적극 활용
+- **메타데이터**: `generateMetadata` 또는 정적 `metadata` export 사용
+- **이미지 최적화**: `next/image` 컴포넌트 활용
+- **Server Actions**: 폼 처리와 데이터 변경에 활용
+- **서버 전용 코드**: `server-only` 패키지로 보호
+
+## 프로젝트 구조 규칙
+
+- 새 기능 추가 시: `app/` 내 라우트 그룹 디렉토리 생성
+- 공유 로직: `lib/`에 유틸리티, `hooks/`에 커스텀 Hook
+- UI 컴포넌트: `components/ui/`에 shadcn/ui 컴포넌트
+- 레이아웃: `components/layout/`에 공통 레이아웃
+- 프로바이더: `components/providers/`에 Context Provider 래퍼
+- 사용자 대면 텍스트는 한국어로 작성

@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code state
+.claude/state/
+
+# Shrimp task manager data
+shrimp-data/
