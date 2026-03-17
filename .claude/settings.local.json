@@ -1,9 +1,12 @@
 {
   "permissions": {
     "allow": [
+      "Read",
+      "Write",
+      "Edit",
       "WebFetch",
+      "WebSearch",
       "Bash",
-      "Bash(npm run:*)",
       "mcp__sequential-thinking",
       "mcp__shadcn",
       "mcp__shadcn__search_items_in_registries",
