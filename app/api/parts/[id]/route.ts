@@ -3,7 +3,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { db, parts, partPrices } from "@/lib/db";
+import { db, parts, partPrices, partPriceHistory } from "@/lib/db";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/actions";
 import type { ApiResponse } from "@/lib/types";
@@ -83,6 +83,31 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (supplyPrice !== undefined) priceUpdate.supplyPrice = supplyPrice;
 
     if (Object.keys(priceUpdate).length > 0) {
+      // 가격 이력 기록 (변경 전 값 조회)
+      const [oldPrice] = await db
+        .select()
+        .from(partPrices)
+        .where(eq(partPrices.partId, id))
+        .limit(1);
+
+      if (oldPrice) {
+        await db.insert(partPriceHistory).values({
+          partId: id,
+          tenantId: user.tenantId,
+          changeType: "manual",
+          listPriceBefore: oldPrice.listPrice,
+          listPriceAfter: listPrice ?? oldPrice.listPrice,
+          marketPriceBefore: oldPrice.marketPrice,
+          marketPriceAfter: marketPrice ?? oldPrice.marketPrice,
+          costPriceBefore: 0,
+          costPriceAfter: 0,
+          supplyPriceBefore: oldPrice.supplyPrice,
+          supplyPriceAfter: supplyPrice ?? oldPrice.supplyPrice,
+          changedBy: user.id,
+          changeReason: "수동 가격 수정",
+        });
+      }
+
       await db
         .update(partPrices)
         .set(priceUpdate)
