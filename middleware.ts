@@ -1,11 +1,11 @@
 // ============================================================
-// Next.js 프록시 (구 미들웨어) — Supabase 세션 관리
+// Next.js 미들웨어 — Supabase 세션 관리
 // ============================================================
 
 import { updateSession } from "@/lib/supabase/middleware";
 import type { NextRequest } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   return updateSession(request);
 }
 
