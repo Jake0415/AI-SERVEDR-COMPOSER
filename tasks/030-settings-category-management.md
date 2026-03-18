@@ -9,11 +9,15 @@
 - **F001**: 부품 DB 등록/관리 — 카테고리 추가/삭제 가능
 - **F017**: 시스템 설정 — 설정 허브 페이지
 
+## 상태
+
+- [x] ✅ 완료
+
 ## 현재 상태
 
 - DB 스키마: `partCategories` 테이블 존재 (name, displayName, group, specFields, isDefault)
-- API: `GET/POST /api/categories` 만 존재 (PUT/DELETE 없음)
-- UI: 설정 페이지 없음, 부품 페이지에서 탭으로만 카테고리 표시
+- API: `GET/POST /api/categories`, `PUT/DELETE /api/categories/[id]` 구현 완료
+- UI: `/settings` 페이지 구현 완료
 - 레이아웃: 사이드바에 "설정" 메뉴 없음
 
 ## 수락 기준

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Loader2, AlertTriangle, Sparkles } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Loader2, AlertTriangle, Sparkles, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -165,12 +165,17 @@ function QuotationTabContent({
 
 export default function QuotationPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const rfpId = searchParams.get("rfp_id");
+  const customerId = searchParams.get("customer_id") ?? "";
 
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedType, setSavedType] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerateQuotationResponse | null>(null);
   const [warnings, setWarnings] = useState<CompatibilityIssue[]>([]);
+  const [activeTab, setActiveTab] = useState("profitability");
 
   // 견적 생성 요청
   const handleGenerate = useCallback(async () => {
@@ -200,6 +205,66 @@ export default function QuotationPage() {
       setLoading(false);
     }
   }, [rfpId]);
+
+  // 견적 확정 (DB 저장)
+  const handleSaveQuotation = useCallback(async (quotationType: string) => {
+    if (!result) return;
+
+    const draft = result.quotations[quotationType as keyof typeof result.quotations];
+    if (!draft) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      // draft의 부품 정보를 견적 항목으로 변환
+      const items = draft.configs.flatMap((config) =>
+        config.parts.map((part) => ({
+          item_type: "hardware" as const,
+          part_id: part.part_id || undefined,
+          item_name: `${part.model_name} (${part.manufacturer})`,
+          item_spec: part.category,
+          quantity: part.quantity * config.quantity,
+          unit: "EA",
+          unit_cost_price: part.unit_cost_price,
+          unit_supply_price: part.unit_supply_price,
+          margin_rate:
+            part.unit_supply_price > 0
+              ? ((part.unit_supply_price - part.unit_cost_price) / part.unit_supply_price) * 100
+              : 0,
+        })),
+      );
+
+      const res = await fetch("/api/quotation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rfp_id: rfpId || undefined,
+          customer_id: customerId || undefined,
+          quotation_type: quotationType,
+          items,
+          total_cost: draft.total_cost,
+          total_supply: draft.total_supply,
+        }),
+      });
+
+      const json = await res.json();
+      if (!json.success) {
+        setError(json.error?.message ?? "견적 저장에 실패했습니다.");
+        return;
+      }
+
+      setSavedType(quotationType);
+      // 2초 후 견적 이력 페이지로 이동
+      setTimeout(() => {
+        router.push("/quotation-history");
+      }, 2000);
+    } catch {
+      setError("견적 저장 중 오류가 발생했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  }, [result, rfpId, customerId, router]);
 
   // rfpId가 있으면 자동 생성 시도
   useEffect(() => {
@@ -281,34 +346,54 @@ export default function QuotationPage() {
 
       {/* 견적 결과 — 3가지 탭 */}
       {result && (
-        <Tabs defaultValue="profitability">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="profitability">수익성 중심</TabsTrigger>
-            <TabsTrigger value="spec_match">규격 충족</TabsTrigger>
-            <TabsTrigger value="performance">성능 향상</TabsTrigger>
-          </TabsList>
+        <>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="profitability">수익성 중심</TabsTrigger>
+              <TabsTrigger value="spec_match">규격 충족</TabsTrigger>
+              <TabsTrigger value="performance">성능 향상</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="profitability" className="mt-4">
-            <QuotationTabContent
-              draft={result.quotations.profitability}
-              recommendation={result.ai_recommendations.profitability}
-            />
-          </TabsContent>
+            <TabsContent value="profitability" className="mt-4">
+              <QuotationTabContent
+                draft={result.quotations.profitability}
+                recommendation={result.ai_recommendations.profitability}
+              />
+            </TabsContent>
 
-          <TabsContent value="spec_match" className="mt-4">
-            <QuotationTabContent
-              draft={result.quotations.spec_match}
-              recommendation={result.ai_recommendations.spec_match}
-            />
-          </TabsContent>
+            <TabsContent value="spec_match" className="mt-4">
+              <QuotationTabContent
+                draft={result.quotations.spec_match}
+                recommendation={result.ai_recommendations.spec_match}
+              />
+            </TabsContent>
 
-          <TabsContent value="performance" className="mt-4">
-            <QuotationTabContent
-              draft={result.quotations.performance}
-              recommendation={result.ai_recommendations.performance}
-            />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="performance" className="mt-4">
+              <QuotationTabContent
+                draft={result.quotations.performance}
+                recommendation={result.ai_recommendations.performance}
+              />
+            </TabsContent>
+          </Tabs>
+
+          {/* 견적 확정 버튼 */}
+          <div className="flex justify-end gap-2 pt-4">
+            {savedType === activeTab ? (
+              <Button disabled className="bg-green-600 hover:bg-green-600">
+                <Check className="h-4 w-4 mr-2" />
+                저장 완료 — 견적 이력으로 이동 중...
+              </Button>
+            ) : (
+              <Button
+                onClick={() => handleSaveQuotation(activeTab)}
+                disabled={saving}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {saving ? "저장 중..." : "현재 견적안 확정 저장"}
+              </Button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
