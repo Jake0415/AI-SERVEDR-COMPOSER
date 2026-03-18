@@ -14,6 +14,7 @@ const PROTECTED_PATHS = [
   "/bid-history",
   "/users",
   "/settings",
+  "/customers",
   "/notifications",
 ];
 
@@ -58,6 +59,12 @@ export async function middleware(request: NextRequest) {
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
+
+  // 보안 헤더 추가
+  supabaseResponse.headers.set("X-Content-Type-Options", "nosniff");
+  supabaseResponse.headers.set("X-Frame-Options", "DENY");
+  supabaseResponse.headers.set("X-XSS-Protection", "1; mode=block");
+  supabaseResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
   return supabaseResponse;
 }

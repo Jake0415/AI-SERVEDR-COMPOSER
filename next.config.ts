@@ -11,7 +11,16 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pdf-parse", "postgres"],
 
   experimental: {
-    optimizePackageImports: ["lucide-react"],
+    optimizePackageImports: [
+      "lucide-react",
+      "recharts",
+      "exceljs",
+      "jspdf",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-popover",
+    ],
   },
 
   async headers() {
