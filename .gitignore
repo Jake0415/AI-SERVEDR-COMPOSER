@@ -54,3 +54,7 @@ screenshot-*.png
 
 # 테스트 문서
 test-document/
+
+# 프로덕션 환경변수 (시크릿 포함)
+.env.production
+.env.local

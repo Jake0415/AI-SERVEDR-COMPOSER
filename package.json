@@ -23,7 +23,7 @@
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
     "exceljs": "^4.4.0",
-    "jose": "^6.2.1",
+    "jose": "^6.2.2",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.543.0",
     "mammoth": "^1.12.0",
