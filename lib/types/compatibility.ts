@@ -3,7 +3,7 @@
 // ============================================================
 
 /** 호환성 규칙 매치 타입 */
-export type MatchType = "exact" | "includes" | "gte" | "lte";
+export type MatchType = "exact" | "includes" | "gte" | "lte" | "contains" | "balanced";
 
 /** 에러 레벨: block=설치 불가, warn=비권장 */
 export type ErrorLevel = "block" | "warn";

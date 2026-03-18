@@ -15,6 +15,8 @@ const PROTECTED_PATHS = [
   "/users",
   "/settings",
   "/customers",
+  "/assembly",
+  "/actual-sales",
   "/notifications",
 ];
 

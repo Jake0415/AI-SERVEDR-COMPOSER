@@ -342,6 +342,77 @@ export interface BidResultRecord {
   recorded_at: string;
 }
 
+// --- 데이터 모델: 실판매 기록 ---
+
+export type ActualSaleChangeType = "unchanged" | "modified" | "added" | "removed";
+
+export interface ActualSale {
+  id: string;
+  tenant_id: string;
+  quotation_id: string;
+  contract_number: string | null;
+  contract_date: string | null;
+  delivery_date: string | null;
+  total_cost: number;
+  total_supply: number;
+  total_amount: number;
+  notes: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface ActualSaleItem {
+  id: string;
+  actual_sale_id: string;
+  quotation_item_id: string | null;
+  change_type: ActualSaleChangeType;
+  item_name: string;
+  item_spec: string | null;
+  quantity: number;
+  unit: string;
+  unit_cost_price: number;
+  unit_supply_price: number;
+  amount: number;
+  sort_order: number;
+}
+
+// --- 데이터 모델: 서버 조립 ---
+
+export interface MotherboardSpecs {
+  socket: string;
+  memory_slots: number;
+  dimm_per_channel: number;
+  memory_channels: number;
+  max_memory_gb: number;
+  pcie_slots: PcieSlotSpec[];
+  supported_storage_interfaces: string[];
+}
+
+export interface PcieSlotSpec {
+  gen: number;
+  lanes: number;
+  physical_size: "x4" | "x8" | "x16";
+}
+
+export interface ChassisSpecs {
+  form_factor: "1U" | "2U" | "4U" | "tower";
+  drive_bays_25: number;
+  drive_bays_35: number;
+  max_gpu_count: number;
+  max_gpu_length_mm: number;
+  psu_form_factor: string;
+  max_psu_count: number;
+}
+
+export interface AssemblyConfig {
+  base_server: { chassis_id: string; motherboard_id: string } | null;
+  cpu: { part_id: string; quantity: number } | null;
+  memory: { part_id: string; slots: number[] }[];
+  storage: { part_id: string; bay_index: number }[];
+  pcie: { part_id: string; slot_index: number }[];
+  psu: { part_id: string; quantity: number } | null;
+}
+
 // --- 데이터 모델: 운영 기능 ---
 
 export interface AuditLog {

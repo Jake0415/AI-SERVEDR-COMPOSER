@@ -286,6 +286,43 @@ export const bidResults = schema.table("bid_results", {
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// ============ 실판매 기록 ============
+
+export const actualSales = schema.table("actual_sales", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  quotationId: uuid("quotation_id").notNull().references(() => quotations.id, { onDelete: "cascade" }),
+  contractNumber: text("contract_number"),
+  contractDate: date("contract_date"),
+  deliveryDate: date("delivery_date"),
+  totalCost: bigint("total_cost", { mode: "number" }).notNull().default(0),
+  totalSupply: bigint("total_supply", { mode: "number" }).notNull().default(0),
+  totalAmount: bigint("total_amount", { mode: "number" }).notNull().default(0),
+  notes: text("notes"),
+  createdBy: uuid("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_actual_sales_quotation").on(table.quotationId),
+  index("idx_actual_sales_tenant").on(table.tenantId),
+]);
+
+export const actualSaleItems = schema.table("actual_sale_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  actualSaleId: uuid("actual_sale_id").notNull().references(() => actualSales.id, { onDelete: "cascade" }),
+  quotationItemId: uuid("quotation_item_id").references(() => quotationItems.id, { onDelete: "set null" }),
+  changeType: text("change_type").notNull().default("unchanged"),
+  itemName: text("item_name").notNull(),
+  itemSpec: text("item_spec"),
+  quantity: integer("quantity").notNull().default(1),
+  unit: text("unit").notNull().default("EA"),
+  unitCostPrice: bigint("unit_cost_price", { mode: "number" }).notNull().default(0),
+  unitSupplyPrice: bigint("unit_supply_price", { mode: "number" }).notNull().default(0),
+  amount: bigint("amount", { mode: "number" }).notNull().default(0),
+  sortOrder: integer("sort_order").notNull().default(0),
+}, (table) => [
+  index("idx_actual_sale_items_sale").on(table.actualSaleId),
+]);
+
 // ============ 감사 로그 ============
 
 export const auditLogs = schema.table("audit_logs", {
