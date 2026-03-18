@@ -3,8 +3,8 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { db, partCategories } from "@/lib/db";
+import { eq, and, count, sql } from "drizzle-orm";
+import { db, partCategories, parts } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/actions";
 
 export async function GET() {
@@ -13,10 +13,26 @@ export async function GET() {
     return NextResponse.json({ success: false, error: { code: "UNAUTHORIZED", message: "인증 필요" } }, { status: 401 });
   }
 
+  // 카테고리 목록 + 각 카테고리별 부품 수 조회
   const categories = await db
-    .select()
+    .select({
+      id: partCategories.id,
+      tenantId: partCategories.tenantId,
+      name: partCategories.name,
+      displayName: partCategories.displayName,
+      group: partCategories.group,
+      specFields: partCategories.specFields,
+      isDefault: partCategories.isDefault,
+      createdAt: partCategories.createdAt,
+      partCount: count(parts.id),
+    })
     .from(partCategories)
+    .leftJoin(
+      parts,
+      and(eq(parts.categoryId, partCategories.id), eq(parts.isDeleted, false)),
+    )
     .where(eq(partCategories.tenantId, user.tenantId))
+    .groupBy(partCategories.id)
     .orderBy(partCategories.name);
 
   return NextResponse.json({ success: true, data: categories });

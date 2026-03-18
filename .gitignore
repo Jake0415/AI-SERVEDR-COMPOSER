@@ -51,3 +51,6 @@ shrimp_data/
 # Playwright MCP
 .playwright-mcp/
 screenshot-*.png
+
+# 테스트 문서
+test-document/

@@ -54,7 +54,12 @@
       "Bash(taskkill /PID 23220 /F /T)",
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{redirect_url}\" http://localhost:4000/login)",
       "Bash(curl -v http://localhost:4000/login)",
-      "mcp__playwright__browser_take_screenshot"
+      "mcp__playwright__browser_take_screenshot",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3005/setup)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5555/setup)",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")"
     ],
     "deny": [],
     "ask": [],

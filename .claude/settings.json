@@ -6,6 +6,9 @@
       "Bash(find /c/claude-code/AI-SERVEDR-COMPOSER/lib -type f -name *.ts)",
       "Bash(grep -r supabase /c/claude-code/AI-SERVEDR-COMPOSER --include=*.ts --include=*.tsx --include=*.json)",
       "Bash(grep -r TODO /c/claude-code/AI-SERVEDR-COMPOSER/app /c/claude-code/AI-SERVEDR-COMPOSER/lib --include=*.ts --include=*.tsx)"
+    ],
+    "additionalDirectories": [
+      "c:\\claude-code\\AI-SERVEDR-COMPOSER\\app\\api\\categories"
     ]
   }
 }
