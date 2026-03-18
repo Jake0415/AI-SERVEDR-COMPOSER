@@ -56,9 +56,10 @@ export const tenants = schema.table("tenants", {
 });
 
 export const users = schema.table("users", {
-  id: uuid("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
   email: text("email").notNull(),
+  passwordHash: text("password_hash").notNull(),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
   department: text("department").notNull(),

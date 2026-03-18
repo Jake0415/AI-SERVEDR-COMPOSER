@@ -1,9 +1,11 @@
 // ============================================================
-// Next.js 미들웨어 — Supabase 세션 관리 (인라인)
+// Next.js 미들웨어 — JWT 쿠키 기반 인증
 // ============================================================
 
-import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
+
+const COOKIE_NAME = "auth-token";
 
 const PROTECTED_PATHS = [
   "/dashboard",
@@ -20,55 +22,44 @@ const PROTECTED_PATHS = [
   "/notifications",
 ];
 
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return new Uint8Array();
+  return new TextEncoder().encode(secret);
+}
+
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  const response = NextResponse.next({ request });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const token = request.cookies.get(COOKIE_NAME)?.value;
+  let isAuthenticated = false;
 
-  // 환경변수 없으면 미들웨어 스킵
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return supabaseResponse;
+  if (token) {
+    try {
+      await jwtVerify(token, getJwtSecret());
+      isAuthenticated = true;
+    } catch {
+      // 만료되거나 유효하지 않은 토큰
+    }
   }
-
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value),
-        );
-        supabaseResponse = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options),
-        );
-      },
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
   const isProtected = PROTECTED_PATHS.some((p) =>
     request.nextUrl.pathname.startsWith(p),
   );
 
-  if (!user && isProtected) {
+  if (!isAuthenticated && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 보안 헤더 추가
-  supabaseResponse.headers.set("X-Content-Type-Options", "nosniff");
-  supabaseResponse.headers.set("X-Frame-Options", "DENY");
-  supabaseResponse.headers.set("X-XSS-Protection", "1; mode=block");
-  supabaseResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  // 보안 헤더
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-XSS-Protection", "1; mode=block");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
 
-  return supabaseResponse;
+  return response;
 }
 
 export const config = {

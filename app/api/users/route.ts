@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, users } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/actions";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { hashPassword } from "@/lib/auth/password";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -36,22 +36,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: { code: "VALIDATION_ERROR", message: "필수 필드 누락" } }, { status: 400 });
   }
 
-  // Supabase Auth로 사용자 생성
-  const supabase = await createSupabaseServerClient();
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
+  // 이메일 중복 확인
+  const existing = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
 
-  if (authError || !authData.user) {
-    return NextResponse.json({ success: false, error: { code: "AUTH_ERROR", message: authError?.message ?? "사용자 생성 실패" } }, { status: 500 });
+  if (existing.length > 0) {
+    return NextResponse.json({ success: false, error: { code: "DUPLICATE_EMAIL", message: "이미 등록된 이메일입니다." } }, { status: 409 });
   }
 
+  const passwordHash = await hashPassword(password);
+
   const [newUser] = await db.insert(users).values({
-    id: authData.user.id,
     tenantId: currentUser.tenantId,
     email,
+    passwordHash,
     name,
     phone: phone ?? "",
     department: department ?? "",

@@ -5,21 +5,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { analyzeRfpDocument } from "@/lib/ai/rfp-analyzer";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { db, rfpDocuments, users } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth/actions";
+import { db, rfpDocuments } from "@/lib/db";
 import { extractTextFromPdf } from "@/lib/parsers/pdf-parser";
 import { extractTextFromDocx } from "@/lib/parsers/docx-parser";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
 
-/**
- * RFP 파일 업로드 → Storage 저장 → 텍스트 추출 → AI 파싱 → DB 저장
- * - Supabase: auth + storage
- * - Drizzle: DB 쿼리
- */
+const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads/rfp";
+
 export async function POST(request: NextRequest) {
   try {
-    // Supabase는 인증 + Storage만 사용
-    const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { success: false, error: { code: "UNAUTHORIZED", message: "인증이 필요합니다." } },
@@ -59,42 +56,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Drizzle로 tenant_id 조회
-    const userRows = await db
-      .select({ tenantId: users.tenantId })
-      .from(users)
-      .where(eq(users.id, user.id))
-      .limit(1);
-
-    if (userRows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: { code: "USER_NOT_FOUND", message: "사용자 정보를 찾을 수 없습니다." } },
-        { status: 404 },
-      );
-    }
-
-    const tenantId = userRows[0].tenantId;
-
-    // 1. Supabase Storage에 파일 업로드
+    // 로컬 파일 저장
     const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const filePath = `rfp/${user.id}/${Date.now()}_${file.name}`;
+    const fileName = `${Date.now()}_${file.name}`;
+    const userDir = path.join(UPLOAD_DIR, user.id);
+    await mkdir(userDir, { recursive: true });
+    const filePath = path.join(userDir, fileName);
+    await writeFile(filePath, fileBuffer);
 
-    const { error: uploadError } = await supabase.storage
-      .from("rfp-documents")
-      .upload(filePath, fileBuffer, { contentType: file.type, upsert: false });
-
-    if (uploadError) {
-      return NextResponse.json(
-        { success: false, error: { code: "UPLOAD_ERROR", message: `파일 업로드 실패: ${uploadError.message}` } },
-        { status: 500 },
-      );
-    }
-
-    // 2. Drizzle로 RFP 레코드 생성 (status: parsing)
+    // DB에 RFP 레코드 생성 (status: parsing)
     const [rfpRecord] = await db
       .insert(rfpDocuments)
       .values({
-        tenantId,
+        tenantId: user.tenantId,
         uploadedBy: user.id,
         fileName: file.name,
         fileUrl: filePath,
@@ -102,7 +76,7 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    // 3. 텍스트 추출
+    // 텍스트 추출
     const text = await extractTextFromFile(file.type, fileBuffer);
 
     if (!text.trim()) {
@@ -117,10 +91,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. AI 파싱
+    // AI 파싱
     const configs = await analyzeRfpDocument(text);
 
-    // 5. Drizzle로 파싱 결과 저장 (status: parsed)
+    // 파싱 결과 저장
     await db
       .update(rfpDocuments)
       .set({ parsedRequirements: configs, status: "parsed" })

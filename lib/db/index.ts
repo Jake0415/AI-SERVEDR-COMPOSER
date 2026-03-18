@@ -19,7 +19,7 @@ function createDrizzle() {
   }
 
   const client = postgres(connectionString, {
-    prepare: false, // Supabase Transaction Pooler 호환
+    prepare: false,
   });
 
   return drizzle(client, {
