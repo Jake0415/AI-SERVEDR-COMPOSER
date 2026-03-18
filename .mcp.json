@@ -1,12 +1,32 @@
 {
   "mcpServers": {
-    "sequential-thinking": {
+    "playwright": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+      "args": ["@playwright/mcp@latest"],
+      "env": {}
     },
     "context7": {
       "type": "http",
       "url": "https://mcp.context7.com/mcp"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["shadcn@latest", "mcp"]
+    },
+    "shrimp-task-manager": {
+      "command": "node",
+      "args": ["C:/claude-code/mcp-shrimp-task-manager/dist/index.js"],
+      "env": {
+        "DATA_DIR": "C:/claude-code/AI-SERVEDR-COMPOSER/shrimp_data",
+        "TEMPLATES_USE": "en",
+        "ENABLE_GUI": "true",
+        "WEB_PORT": "3801"
+      }
     },
     "slack": {
       "command": "npx",
@@ -15,18 +35,6 @@
         "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
         "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
       }
-    },
-    "shrimp-task-manager": {
-      "command": "npx",
-      "args": ["-y", "mcp-shrimp-task-manager"],
-      "env": {
-        "DATA_DIR": "./shrimp-data",
-        "TEMPLATES_USE": "en"
-      }
-    },
-    "shadcn": {
-      "command": "npx",
-      "args": ["shadcn@latest", "mcp"]
     }
   }
 }

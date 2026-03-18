@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(find /c/claude-code/AI-SERVEDR-COMPOSER/lib -type f -name *.ts)",
+      "Bash(grep -r supabase /c/claude-code/AI-SERVEDR-COMPOSER --include=*.ts --include=*.tsx --include=*.json)",
+      "Bash(grep -r TODO /c/claude-code/AI-SERVEDR-COMPOSER/app /c/claude-code/AI-SERVEDR-COMPOSER/lib --include=*.ts --include=*.tsx)"
+    ]
+  }
+}
