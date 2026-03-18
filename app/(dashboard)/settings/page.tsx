@@ -19,11 +19,10 @@ const settingsMenu = [
     icon: FolderTree,
   },
   {
-    href: "/settings",
+    href: "/settings/company",
     title: "회사 정보",
     description: "회사 기본 정보, 로고, 직인, 계좌 정보 관리",
     icon: Building2,
-    disabled: true,
   },
   {
     href: "/settings",

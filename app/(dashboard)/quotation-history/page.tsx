@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Download, FileText, FileSpreadsheet, Trophy, X } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, Trophy, X, CheckCircle, Send, Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -116,6 +116,19 @@ export default function QuotationHistoryPage() {
     window.open(`/api/quotation/${id}/export?format=excel`, "_blank");
   };
 
+  // 워크플로우 액션 (승인/발행/개정)
+  const handleWorkflow = async (id: string, action: "approve" | "publish" | "revise") => {
+    try {
+      const res = await fetch(`/api/quotation/${id}/${action}`, { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        await fetchQuotations();
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   // 낙찰 결과 모달 열기
   const openBidModal = (quotation: QuotationRow) => {
     setSelectedQuotation(quotation);
@@ -185,6 +198,7 @@ export default function QuotationHistoryPage() {
                 <TableHead>상태</TableHead>
                 <TableHead className="text-center">출력</TableHead>
                 <TableHead className="text-center">낙찰결과</TableHead>
+                <TableHead className="text-center">워크플로우</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -244,6 +258,40 @@ export default function QuotationHistoryPage() {
                     ) : (
                       <span className="text-xs text-muted-foreground">기록완료</span>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-1">
+                      {q.status === "draft" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleWorkflow(q.id, "approve")}
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          승인
+                        </Button>
+                      )}
+                      {(q.status === "draft" || q.status === "approved") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleWorkflow(q.id, "publish")}
+                        >
+                          <Send className="h-3 w-3 mr-1" />
+                          발행
+                        </Button>
+                      )}
+                      {(q.status === "published" || q.status === "won" || q.status === "lost") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleWorkflow(q.id, "revise")}
+                        >
+                          <Copy className="h-3 w-3 mr-1" />
+                          개정
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
