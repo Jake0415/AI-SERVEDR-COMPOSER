@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
 
+  serverExternalPackages: ["pdf-parse", "postgres"],
+
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },

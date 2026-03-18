@@ -2,6 +2,36 @@
 // AI-SERVER-COMPOSER 타입 정의 — PRD 프로덕션 기준
 // ============================================================
 
+// AI & 호환성 타입 re-export
+export type {
+  ParsedServerConfig,
+  ServerRequirements,
+  CpuRequirement,
+  MemoryRequirement,
+  StorageRequirement,
+  StorageItem,
+  GpuRequirement,
+  NetworkRequirement,
+  RaidRequirement,
+  PowerRequirement,
+  MatchedPart,
+  ServerConfigResult,
+  QuotationDraft,
+  RecommendationText,
+  GenerateQuotationRequest,
+  GenerateQuotationResponse,
+} from "./ai";
+
+export type {
+  CompatibilityRule,
+  CompatibilityIssue,
+  PartRef,
+  ValidationResult,
+  PowerCalculationInput,
+  PowerCalculationResult,
+  PowerBreakdown,
+} from "./compatibility";
+
 // --- 공통 Enum 타입 ---
 
 export type UserRole = "super_admin" | "admin" | "member";

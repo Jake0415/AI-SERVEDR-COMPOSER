@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   LayoutDashboard,
   Wrench,
@@ -9,6 +10,9 @@ import {
   Users,
   LogOut,
 } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth/actions";
+import { logoutAction } from "@/lib/auth/actions";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard, roles: ["super_admin", "admin", "member"] },
@@ -20,16 +24,19 @@ const menuItems = [
   { href: "/users", label: "사용자 관리", icon: Users, roles: ["super_admin"] },
 ];
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // TODO: Task 014에서 인증 체크 + 역할별 메뉴 필터링 구현
-  const userRole = "super_admin"; // 임시 하드코딩
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
 
   const visibleMenuItems = menuItems.filter((item) =>
-    item.roles.includes(userRole)
+    item.roles.includes(user.role),
   );
 
   return (
@@ -52,11 +59,17 @@ export default function DashboardLayout({
             </Link>
           ))}
         </nav>
-        <div className="p-4 border-t">
-          <button className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted transition-colors w-full">
-            <LogOut className="h-4 w-4" />
-            로그아웃
-          </button>
+        <div className="p-4 border-t space-y-2">
+          <div className="px-3 py-1">
+            <p className="text-sm font-medium">{user.name}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+          </div>
+          <form action={logoutAction}>
+            <Button variant="ghost" size="sm" className="w-full justify-start gap-3 text-muted-foreground" type="submit">
+              <LogOut className="h-4 w-4" />
+              로그아웃
+            </Button>
+          </form>
         </div>
       </aside>
 
