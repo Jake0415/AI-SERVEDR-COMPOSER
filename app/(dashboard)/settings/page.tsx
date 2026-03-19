@@ -3,7 +3,7 @@
 // ============================================================
 
 import Link from "next/link";
-import { FolderTree, Building2, Bell, Palette } from "lucide-react";
+import { FolderTree, Building2, Bell, Palette, KeyRound } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -23,6 +23,12 @@ const settingsMenu = [
     title: "회사 정보",
     description: "회사 기본 정보, 로고, 직인, 계좌 정보 관리",
     icon: Building2,
+  },
+  {
+    href: "/settings/password",
+    title: "비밀번호 변경",
+    description: "현재 비밀번호를 확인하고 새 비밀번호로 변경",
+    icon: KeyRound,
   },
   {
     href: "/settings/theme",
