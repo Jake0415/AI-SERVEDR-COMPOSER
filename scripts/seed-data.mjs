@@ -188,6 +188,38 @@ async function main() {
   }
   console.log("Step 6: 견적 3건 + 낙찰이력 2건 완료");
 
+  // Step 7: AI 프롬프트 시드 데이터
+  await sql`DELETE FROM ai_server_composer.ai_prompts WHERE tenant_id = ${TENANT}`;
+  const promptSeeds = [
+    {
+      slug: "rfp-analyzer",
+      name: "RFP 분석 프롬프트",
+      description: "RFP 문서에서 서버 하드웨어 요구사항을 추출합니다.",
+      category: "extraction",
+      system_prompt: `당신은 한국 IT 인프라 견적 전문가입니다.\nRFP(제안요청서) 문서에서 서버 하드웨어 요구사항을 정확히 추출합니다.\n\n## 규칙\n1. 반드시 아래 JSON 스키마로 출력하세요.\n2. 명시되지 않은 사양은 null로 설정하세요. 절대 추측하지 마세요.\n3. 수량이 불명확하면 notes 배열에 기록하세요.\n4. 한국 공공기관 RFP의 관용적 표현을 이해하세요:\n   - "고성능 서버" = GPU 서버 가능성 높음\n   - "대용량 스토리지" = HDD 기반, 10TB 이상\n   - "이중화" = 전원 이중화 (1+1 PSU)\n   - "인공지능/딥러닝/머신러닝" = GPU 필수\n5. 서버 구성이 여러 종류면 각각 별도 객체로 분리하세요.`,
+    },
+    {
+      slug: "chat-quotation",
+      name: "AI 대화형 견적 프롬프트",
+      description: "사용자와 대화하며 서버 사양을 파악합니다.",
+      category: "analysis",
+      system_prompt: `당신은 한국 서버 인프라 견적 전문가 AI입니다.\n사용자와 대화하며 서버 사양을 파악합니다.\n\n## 응답 규칙\n1. 반드시 아래 JSON 형식으로 응답하세요.\n2. 사용자의 요청에서 서버 사양을 최대한 추출하세요.\n3. 정보가 충분하면 is_complete: true로 설정하세요.\n4. 정보가 부족하면 is_complete: false로 설정하고, reply에 추가 질문을 포함하세요.\n5. 추측하지 말고, 명시되지 않은 사양은 null로 설정하세요.`,
+    },
+    {
+      slug: "recommendation",
+      name: "견적 추천 설명 프롬프트",
+      description: "3가지 견적안의 추천 근거를 생성합니다.",
+      category: "recommendation",
+      system_prompt: `당신은 서버 하드웨어 구성 컨설턴트입니다.\n고객에게 제안할 견적안의 추천 근거를 작성합니다.\n\n## 규칙\n1. 각 견적안별 2-3문장으로 추천 이유를 작성하세요.\n2. 경쟁 우위 포인트를 반드시 포함하세요.\n3. 가격 대비 성능(가성비) 관점을 포함하세요.\n4. 한국어, 비즈니스 톤으로 작성하세요.\n5. 구체적인 모델명과 수치를 언급하세요.`,
+    },
+  ];
+  for (const p of promptSeeds) {
+    await sql`INSERT INTO ai_server_composer.ai_prompts
+      (tenant_id, slug, name, description, category, system_prompt, is_active, is_system, version, created_by)
+      VALUES (${TENANT}, ${p.slug}, ${p.name}, ${p.description}, ${p.category}, ${p.system_prompt}, true, true, 1, ${USER})`;
+  }
+  console.log("Step 7: AI 프롬프트 3건 완료");
+
   await sql.end();
   console.log("\n=== 전체 시드 데이터 투입 완료 ===");
   console.log("로그인: yhk71261@gmail.com / @Dnflwlq01");

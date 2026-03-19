@@ -7,40 +7,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/actions";
 import { handleApiError } from "@/lib/errors";
 import { requestStructuredJson } from "@/lib/ai/openai-client";
+import { getPrompt } from "@/lib/ai/prompt-loader";
+import { DEFAULT_PROMPTS } from "@/lib/ai/default-prompts";
 import { rfpParsingResultSchema } from "@/lib/types/schemas";
 import type { ParsedServerConfig } from "@/lib/types/ai";
-
-const CHAT_SYSTEM_PROMPT = `당신은 한국 서버 인프라 견적 전문가 AI입니다.
-사용자와 대화하며 서버 사양을 파악합니다.
-
-## 응답 규칙
-1. 반드시 아래 JSON 형식으로 응답하세요.
-2. 사용자의 요청에서 서버 사양을 최대한 추출하세요.
-3. 정보가 충분하면 is_complete: true로 설정하세요.
-4. 정보가 부족하면 is_complete: false로 설정하고, reply에 추가 질문을 포함하세요.
-5. 추측하지 말고, 명시되지 않은 사양은 null로 설정하세요.
-
-## 출력 JSON 스키마
-{
-  "reply": "사용자에게 보여줄 한국어 응답 메시지",
-  "is_complete": true|false,
-  "configs": [
-    {
-      "config_name": "서버 용도명",
-      "quantity": 수량,
-      "requirements": {
-        "cpu": { "min_cores": null|숫자, "min_clock_ghz": null|숫자, "socket_type": null|문자열, "architecture": null|문자열, "max_tdp_w": null|숫자 } | null,
-        "memory": { "min_capacity_gb": 숫자, "type": null|"DDR4"|"DDR5", "ecc": true|false, "min_speed_mhz": null|숫자 } | null,
-        "storage": { "items": [{ "type": "SSD"|"HDD", "min_capacity_gb": 숫자, "interface_type": null|"NVMe"|"SATA"|"SAS", "quantity": 숫자 }] } | null,
-        "gpu": null | { "min_vram_gb": 숫자, "min_count": 숫자, "use_case": "문자열", "preferred_model": null|문자열 },
-        "network": null | { "min_speed_gbps": 숫자, "port_count": null|숫자, "type": null|문자열 },
-        "raid": null | { "level": "문자열", "required": true|false },
-        "power": null | { "redundancy": true|false, "min_wattage": null|숫자 }
-      },
-      "notes": ["특이사항"]
-    }
-  ]
-}`;
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -81,12 +51,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // DB에서 프롬프트 로드
+    const prompt = await getPrompt("chat-quotation", user.tenantId);
+    const systemPrompt = prompt.systemPrompt ?? DEFAULT_PROMPTS["chat-quotation"].systemPrompt;
+
     // 대화 이력을 포함하여 컨텍스트 구성
     const conversationContext = buildConversationContext(message, history);
 
     try {
       const result = await requestStructuredJson(
-        CHAT_SYSTEM_PROMPT,
+        systemPrompt,
         conversationContext,
         (raw: string) => {
           const parsed = JSON.parse(raw);
@@ -105,6 +79,11 @@ export async function POST(request: NextRequest) {
             is_complete: parsed.is_complete ?? false,
             specs: validatedSpecs,
           };
+        },
+        {
+          model: prompt.modelName,
+          temperature: prompt.temperature,
+          maxTokens: prompt.maxTokens,
         },
       );
 

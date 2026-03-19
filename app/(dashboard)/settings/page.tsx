@@ -3,7 +3,7 @@
 // ============================================================
 
 import Link from "next/link";
-import { FolderTree, Building2, Bell, Palette, KeyRound } from "lucide-react";
+import { FolderTree, Building2, Bell, Palette, KeyRound, BrainCircuit } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -23,6 +23,12 @@ const settingsMenu = [
     title: "회사 정보",
     description: "회사 기본 정보, 로고, 직인, 계좌 정보 관리",
     icon: Building2,
+  },
+  {
+    href: "/settings/prompts",
+    title: "AI 프롬프트 관리",
+    description: "LLM 시스템 프롬프트 추가, 수정, 삭제 및 버전 관리",
+    icon: BrainCircuit,
   },
   {
     href: "/settings/password",

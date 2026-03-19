@@ -1,6 +1,6 @@
 // ============================================================
 // Drizzle ORM 스키마 정의 — ai_server_composer 전용 스키마
-// 17개 테이블 + 인덱스 + CHECK 제약
+// 20개 테이블 + 인덱스 + CHECK 제약
 // ============================================================
 
 import {
@@ -356,4 +356,29 @@ export const notifications = schema.table("notifications", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
   index("idx_notifications_user").on(table.userId, table.isRead),
+]);
+
+// ============ AI 프롬프트 관리 ============
+
+export const aiPrompts = schema.table("ai_prompts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  slug: text("slug").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  systemPrompt: text("system_prompt").notNull(),
+  outputSchema: text("output_schema"),
+  modelName: text("model_name"),
+  temperature: numeric("temperature"),
+  maxTokens: integer("max_tokens"),
+  isActive: boolean("is_active").notNull().default(true),
+  isSystem: boolean("is_system").notNull().default(false),
+  version: integer("version").notNull().default(1),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_ai_prompts_slug_tenant").on(table.tenantId, table.slug),
+  index("idx_ai_prompts_category").on(table.category),
 ]);

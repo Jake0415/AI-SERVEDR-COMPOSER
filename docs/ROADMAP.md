@@ -606,18 +606,29 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - 호환 부품 조회 API (`/api/assembly/compatible-parts`)
   - customer_id URL 파라미터 전달
 
-- ✅ **Task 070-B: 서버 구성 6단계 위저드 통합 (2일)**
-  - `/quotation/configure/[rfpId]/[configIndex]` 위저드 페이지
-  - Step 1~5: 기존 Task 043~047 수동 조립 UI 재사용
-  - Step 6: PSU + 전체 요약
-  - 자동 구성: RFP 요구사항 기반 부품 필터링 (코어 수, GPU 여부, 메모리 용량)
+- ⚠️ **Task 070-B: 서버 구성 6단계 위저드 통합 (부분 구현)**
+  - ✅ `/quotation/configure/[rfpId]/[configIndex]` 위저드 페이지 UI 구현
+  - ✅ 6단계 StepBar + 부품 카테고리별 선택 UI 존재
+  - ⚠️ 자동→수동 전환 로직 부분 구현
+  - ❌ 호환성 실시간 검증 UI 미완성
 
-- ✅ **Task 070-C: 전략 비교 + 견적 확정 (1일)**
-  - `/quotation/configure/[rfpId]/compare` 비교 화면
-  - 3가지 전략 (수익성/규격/성능) 비교 테이블
-  - AI 추천 텍스트 표시
-  - customer_id 자동 설정, 최종 견적 확정 → quotation-history
+- ⚠️ **Task 070-C: 전략 비교 + 견적 확정 (미완성)**
+  - ✅ `/quotation/configure/[rfpId]/compare` 비교 페이지 UI 스텁 존재
+  - ❌ 3가지 전략 비교 테이블 미구현
+  - ❌ AI 추천 텍스트 미연동
+  - ❌ 최종 견적 확정 → quotation-history 연결 미완성
+
+### Phase 8: AI 프롬프트 관리 시스템
+
+- ✅ **Task 077: AI 프롬프트 관리 CRUD (완료)**
+  - DB: `ai_prompts` 테이블 (20번째 테이블)
+  - API: `/api/prompts` GET/POST, `/api/prompts/[id]` GET/PUT/DELETE
+  - UI: `/settings/prompts` 프롬프트 목록/편집/복제/삭제
+  - 기존 AI 모듈 3개 리팩터링: DB 프롬프트 우선, 폴백 상수 지원
+  - 시드 데이터: 3개 시스템 프롬프트 (rfp-analyzer, chat-quotation, recommendation)
 
 ### 미완료 Task 요약
 
-- 모든 Task 구현 완료 (57/57 = 100%)
+- Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
+- Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
+- 완료율: 56/58 = ~97% (070-B, 070-C 부분 구현)

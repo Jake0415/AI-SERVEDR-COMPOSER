@@ -25,24 +25,37 @@ export function getModelName(): string {
   return process.env.OPENAI_MODEL ?? "gpt-4o";
 }
 
+/** 구조화된 JSON 응답 요청 옵션 */
+export interface StructuredJsonOptions {
+  model?: string | null;
+  temperature?: number | null;
+  maxTokens?: number | null;
+  messages?: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+}
+
 /** 구조화된 JSON 응답 요청 */
 export async function requestStructuredJson<T>(
   systemPrompt: string,
   userContent: string,
   parseResponse: (raw: string) => T,
+  options?: StructuredJsonOptions,
 ): Promise<T> {
   const client = getOpenAIClient();
-  const model = getModelName();
+  const model = options?.model || getModelName();
+  const temperature = options?.temperature ?? 0.1;
+  const maxTokens = options?.maxTokens ?? 4096;
+
+  const messages = options?.messages ?? [
+    { role: "system" as const, content: systemPrompt },
+    { role: "user" as const, content: userContent },
+  ];
 
   const response = await client.chat.completions.create({
     model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userContent },
-    ],
+    messages,
     response_format: { type: "json_object" },
-    temperature: 0.1,
-    max_tokens: 4096,
+    temperature,
+    max_tokens: maxTokens,
   });
 
   const content = response.choices[0]?.message?.content;
