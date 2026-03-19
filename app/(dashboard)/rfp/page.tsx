@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileText, Loader2, Server } from "lucide-react";
+import { Upload, FileText, Loader2, Server, ServerCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -292,17 +292,31 @@ export default function RfpPage() {
                       {rfp.fileName}
                     </TableCell>
                     <TableCell>{statusBadge(rfp.status)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
                       {rfp.status === "parsed" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            router.push(`/quotation?rfp_id=${rfp.id}`)
-                          }
-                        >
-                          견적 생성
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              router.push(
+                                `/quotation/configure?rfp_id=${rfp.id}`
+                              )
+                            }
+                          >
+                            <ServerCog className="h-3.5 w-3.5 mr-1.5" />
+                            서버 구성
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              router.push(`/quotation?rfp_id=${rfp.id}`)
+                            }
+                          >
+                            견적 생성
+                          </Button>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>

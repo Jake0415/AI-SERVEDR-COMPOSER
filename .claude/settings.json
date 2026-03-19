@@ -5,7 +5,19 @@
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(find /c/claude-code/AI-SERVEDR-COMPOSER/lib -type f -name *.ts)",
       "Bash(grep -r supabase /c/claude-code/AI-SERVEDR-COMPOSER --include=*.ts --include=*.tsx --include=*.json)",
-      "Bash(grep -r TODO /c/claude-code/AI-SERVEDR-COMPOSER/app /c/claude-code/AI-SERVEDR-COMPOSER/lib --include=*.ts --include=*.tsx)"
+      "Bash(grep -r TODO /c/claude-code/AI-SERVEDR-COMPOSER/app /c/claude-code/AI-SERVEDR-COMPOSER/lib --include=*.ts --include=*.tsx)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_wait_for",
+      "Read(//c/claude-code/AI-SERVEDR-COMPOSER/**)",
+      "Bash(while read:*)",
+      "Bash(do taskkill:*)",
+      "Bash(done)",
+      "Bash(taskkill /PID 9592 /F /T)",
+      "Bash(taskkill /PID 9592 /F)",
+      "Bash(taskkill /PID 24996 /F)"
     ],
     "additionalDirectories": [
       "c:\\claude-code\\AI-SERVEDR-COMPOSER\\app\\api\\categories"

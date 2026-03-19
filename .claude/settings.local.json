@@ -1,8 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Read", "Write", "Edit", "Glob", "Grep",
-      "WebFetch", "WebSearch",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
       "Bash(*)",
       "mcp__playwright__*",
       "mcp__context7__*",
@@ -10,7 +15,8 @@
       "mcp__shadcn__*",
       "mcp__shrimp-task-manager__*",
       "mcp__slack__*",
-      "mcp__claude_ai_Gmail__*"
+      "mcp__claude_ai_Gmail__*",
+      "Bash(wait bsx801cw4:*)"
     ],
     "deny": [
       "Bash(rm -rf *)",
