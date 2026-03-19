@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- 서버 랙 배경 -->
+  <rect x="2" y="2" width="28" height="28" rx="6" fill="#1a1a2e"/>
+
+  <!-- 서버 유닛 1 (상단) -->
+  <rect x="6" y="5" width="20" height="6" rx="1.5" fill="#16213e" stroke="#0f3460" stroke-width="0.5"/>
+  <circle cx="9" cy="8" r="1.2" fill="#00d4aa"/>
+  <circle cx="12.5" cy="8" r="1.2" fill="#00d4aa" opacity="0.6"/>
+  <rect x="16" y="7" width="8" height="2" rx="0.5" fill="#0f3460"/>
+
+  <!-- 서버 유닛 2 (중간) -->
+  <rect x="6" y="13" width="20" height="6" rx="1.5" fill="#16213e" stroke="#0f3460" stroke-width="0.5"/>
+  <circle cx="9" cy="16" r="1.2" fill="#e94560"/>
+  <circle cx="12.5" cy="16" r="1.2" fill="#00d4aa"/>
+  <rect x="16" y="15" width="8" height="2" rx="0.5" fill="#0f3460"/>
+
+  <!-- AI 심볼 (하단) -->
+  <rect x="6" y="21" width="20" height="6" rx="1.5" fill="#0f3460"/>
+  <text x="16" y="25.5" text-anchor="middle" font-family="Arial,sans-serif" font-size="5" font-weight="bold" fill="#00d4aa">AI</text>
+  <circle cx="23" cy="24" r="1" fill="#e94560"/>
+</svg>

@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "AI-SERVER-COMPOSER",
   description: "RFP 기반 인프라 견적서 산출 솔루션",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
