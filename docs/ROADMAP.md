@@ -279,7 +279,7 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - 마진 시뮬레이션 UI와 실제 계산 로직 연동
   - 시뮬레이션 정확도 테스트
 
-- **Task 019: 견적서 출력 및 낙찰 결과 기록 구현 (F007, F008)**
+- ✅ **Task 019: 견적서 출력 및 낙찰 결과 기록 구현 (F007, F008)**
   - 견적서 출력 기능 구현
     - jsPDF 기반 PDF 견적서 생성 (나라장터 양식 / 자사 양식)
     - ExcelJS 기반 Excel 견적서 생성
@@ -427,17 +427,34 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - 에러 모니터링 설정 (Vercel Analytics 또는 Sentry)
   - 프로덕션 배포 및 스모크 테스트
 
-### Phase 5: 영업 효율화 및 AI 고도화
+### Phase 5: 견적 생성 시나리오 통합 및 영업 효율화
 
-> 자연어 견적, 템플릿, 딜 관리, 견적 복제, 승인 워크플로우 등 영업 현장의 효율을 극대화하는 기능을 구현합니다.
+> 3가지 견적 생성 시나리오(RFP/엑셀/AI대화형) 통합 허브를 구축하고, 영업 현장의 효율을 극대화하는 기능을 구현합니다.
 
-- ✅ **Task 050: 자연어 견적 생성 (F026)** - 우선순위
-  - 채팅 UI 컴포넌트 구현 (메시지 입력, 대화 이력 표시)
-  - 자연어 파싱 엔진: OpenAI GPT-4o 기반 서버 사양 요구사항 추출
-  - 자연어 → RFP 파싱 결과 변환 → 기존 견적 생성 엔진 연동
-  - 대화형 추가 질문 (부족한 요구사항 확인)
-  - 자연어 견적 이력 저장
-  - `/chat-quotation` 라우트 및 API 구현
+- ✅ **Task 074: 견적 생성 허브 페이지 (신규)** - 최우선
+  - `/quotation` 페이지를 3가지 시나리오 선택 허브로 재설계
+  - RFP 기반 / 엑셀 업로드 / AI 대화형 카드 + 템플릿 바로가기
+  - 사이드바 메뉴 정리 (chat-quotation, guide-selling, 서버구성 별도 메뉴 제거)
+
+- ✅ **Task 076: 견적 생성 거래처 선택 우선 흐름 (F020 연계)**
+  - 견적 허브에서 거래처 선택을 필수 첫 단계로 추가 (CustomerSelector)
+  - 하위 페이지(RFP/엑셀/채팅/결과/서버구성)에 거래처 배너 표시 (CustomerBanner)
+  - 모든 견적 흐름에 `customer_id` URL 파라미터 전달
+  - 결과 페이지 `customer_id` 빈 문자열 버그 수정
+
+- ✅ **Task 050-R: AI 대화형 견적 통합 (F026 재정의)** - 우선순위
+  - 기존 Task 050(자연어) + Task 059(가이드셀링) 통합
+  - `/quotation/chat` 통합 UI (자유 입력 모드 + 가이드 모드)
+  - LLM → ParsedServerConfig[] 구조화 응답 → sessionStorage 경유 → 매칭 엔진 연동
+  - `/api/quotation/generate`가 `rfp_id` 또는 `specs` 직접 수신 가능하도록 확장
+
+- ✅ **Task 075: 엑셀 업로드 견적 (F047, 신규)** - 우선순위
+  - `/quotation/excel` 페이지 (업로드 UI + 실제 API 연동)
+  - `/api/quotation/excel-template` 견적용 엑셀 템플릿 다운로드 API
+  - `/api/quotation/excel-upload` 엑셀 파싱 → ParsedServerConfig[] 변환 API
+  - 기존 매칭 엔진 연동 (sessionStorage 경유)
+
+- ⚠️ ~~**Task 050: 자연어 견적 생성 (F026)**~~ → Task 050-R로 교체됨
 
 - ✅ **Task 051: 견적 템플릿 관리 (F027)**
   - 템플릿 데이터 모델: `quotation_templates` 테이블 설계 (DB 마이그레이션)
@@ -506,12 +523,7 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - 견적 생성 시 EOL 부품 포함 경고 표시
   - 대체 부품 추천 로직 (동일 카테고리/상위 스펙)
 
-- ✅ **Task 059: 가이드 셀링 (F035)**
-  - 용도별 질문 트리 설계 (웹서버, DB서버, AI/ML, VDI, HPC 등)
-  - 대화형 UI 컴포넌트 (스텝 바이 스텝 질문)
-  - 워크로드 분석 → 부품 자동 구성 추천 엔진
-  - 추천 결과에서 견적 생성 연동
-  - `/guide-selling` 라우트 UI 구현
+- ⚠️ ~~**Task 059: 가이드 셀링 (F035)**~~ → Task 050-R(AI 대화형 견적)에 흡수됨
 
 - ✅ **Task 060: 크로스셀/업셀 AI 추천 (F036)**
   - 견적 내용 기반 추가 판매 추천 엔진 (OpenAI 연동)
@@ -584,29 +596,28 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - PDF 리포트 자동 생성
   - `/performance-report` 라우트 UI 구현
 
-### Phase 7: RFP 기반 서버 구성 워크플로우 (Task 070-A/B/C)
+### Phase 7: RFP 기반 서버 구성 세부 조정 (시나리오 1 확장)
 
-> RFP 업로드 → 서버 구성 → 견적 생성 플로우를 하나로 연결. 기존 "서버 조립" 메뉴를 RFP 기반 단계별 서버 구성 워크플로우로 통합.
+> 시나리오 1(RFP 기반 견적)의 하위 프로세스. 자동 생성된 견적안에서 서버별 부품을 수동으로 세부 조정하는 위저드. Task 074(견적 생성 허브) 의존.
 
-- [ ] **Task 070-A: 서버 구성 시작 페이지 + RFP 연결 (2일)**
-  - [ ] `/quotation/configure` 페이지 (RFP 서버 목록 카드)
-  - [ ] RFP 페이지에 "서버 구성 시작" 링크 추가
-  - [ ] 호환 부품 조회 API (`/api/assembly/compatible-parts`)
-  - [ ] 메뉴 구조 변경 ("서버 조립" → "서버 구성")
+- ✅ **Task 070-A: 서버 구성 시작 페이지 + RFP 연결 (2일)**
+  - `/quotation/configure` 페이지 (RFP 서버 목록 카드 + 견적 비교 버튼)
+  - RFP 페이지에 "서버 구성 시작" 링크 추가
+  - 호환 부품 조회 API (`/api/assembly/compatible-parts`)
+  - customer_id URL 파라미터 전달
 
-- [ ] **Task 070-B: 서버 구성 6단계 위저드 통합 (2일)**
-  - [ ] `/quotation/configure/[rfpId]/[configIndex]` 위저드 페이지
-  - [ ] Step 1~5: 기존 Task 043~047 수동 조립 UI 재사용
-  - [ ] Step 6: PSU + 전체 요약
-  - [ ] 자동 구성 → 수동 편집 전환 로직
-  - [ ] 호환성 실시간 검증 UI
+- ✅ **Task 070-B: 서버 구성 6단계 위저드 통합 (2일)**
+  - `/quotation/configure/[rfpId]/[configIndex]` 위저드 페이지
+  - Step 1~5: 기존 Task 043~047 수동 조립 UI 재사용
+  - Step 6: PSU + 전체 요약
+  - 자동 구성: RFP 요구사항 기반 부품 필터링 (코어 수, GPU 여부, 메모리 용량)
 
-- [ ] **Task 070-C: 전략 비교 + 견적 확정 (1일)**
-  - [ ] `/quotation/configure/[rfpId]/compare` 비교 화면
-  - [ ] 3가지 전략 (수익성/규격/성능) 비교 테이블
-  - [ ] AI 추천 텍스트 표시
-  - [ ] 최종 견적 생성 → quotation-history
+- ✅ **Task 070-C: 전략 비교 + 견적 확정 (1일)**
+  - `/quotation/configure/[rfpId]/compare` 비교 화면
+  - 3가지 전략 (수익성/규격/성능) 비교 테이블
+  - AI 추천 텍스트 표시
+  - customer_id 자동 설정, 최종 견적 확정 → quotation-history
 
-### 미완료 Task (Phase 3)
+### 미완료 Task 요약
 
-- [ ] **Task 019: 견적서 출력 및 낙찰 결과 기록 (F007, F008)** — Phase 3 잔여
+- 모든 Task 구현 완료 (57/57 = 100%)

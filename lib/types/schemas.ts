@@ -195,9 +195,13 @@ export const rfpParsingResultSchema = z.array(parsedServerConfigSchema);
 // --- 견적 생성 요청 스키마 ---
 
 export const generateQuotationSchema = z.object({
-  rfp_id: z.string().min(1, "RFP를 선택하세요"),
-  customer_id: z.string().min(1, "거래처를 선택하세요"),
-});
+  rfp_id: z.string().optional(),
+  customer_id: z.string().optional(),
+  specs: rfpParsingResultSchema.optional(),
+}).refine(
+  (data) => data.rfp_id || (data.specs && data.specs.length > 0),
+  { message: "RFP ID 또는 서버 사양(specs)을 제공해야 합니다." },
+);
 
 // --- 타입 추출 ---
 

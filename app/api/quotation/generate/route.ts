@@ -34,11 +34,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { rfp_id, customer_id } = parsed.data;
+    const { rfp_id, customer_id, specs } = parsed.data;
     void customer_id;
 
-    // 1. RFP 파싱 결과 조회
-    const rfpConfigs = await getRfpParsedConfigs(rfp_id);
+    // 1. RFP 파싱 결과 조회 (rfp_id 또는 직접 specs)
+    let rfpConfigs: ParsedServerConfig[] | null = null;
+    if (specs && specs.length > 0) {
+      rfpConfigs = specs;
+    } else if (rfp_id) {
+      rfpConfigs = await getRfpParsedConfigs(rfp_id);
+    }
     if (!rfpConfigs || rfpConfigs.length === 0) {
       return NextResponse.json(
         { success: false, error: { code: "RFP_NOT_FOUND", message: "RFP 파싱 결과가 없습니다." } },

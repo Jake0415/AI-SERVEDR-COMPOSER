@@ -1,7 +1,7 @@
 ---
 id: "070-B"
 title: "서버 구성 6단계 위저드 통합"
-status: "planned"
+status: "completed"
 priority: "high"
 phase: "7"
 estimated_effort: "2d"
@@ -9,6 +9,13 @@ dependencies: ["070-A", "043", "044", "045", "046", "047"]
 ---
 
 # Task 070-B: 서버 구성 6단계 위저드 통합
+
+## 현재 구현 상태
+
+- ✅ `/quotation/configure/[rfpId]/[configIndex]` 위저드 페이지 UI 구현됨
+- ✅ 6단계 StepBar + 부품 카테고리별 선택 UI 존재
+- ⚠️ 자동 구성 → 수동 편집 전환 로직 부분 구현
+- ❌ 호환성 실시간 검증 UI 미완성
 
 ## 목표
 RFP에서 추출된 개별 서버에 대해 6단계 부품 선택 위저드를 제공. 기존 Task 043~047 수동 조립 UI를 재사용하여 RFP 요구사항 기반 필터링 + 추천 기능 추가.

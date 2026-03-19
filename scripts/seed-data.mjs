@@ -1,7 +1,9 @@
 // 전체 시드 데이터 투입 스크립트
+// 테넌트 + 사용자(super_admin) + 카테고리 + 부품 + 거래처 + 견적 자동 생성
 import postgres from "postgres";
+import bcryptjs from "bcryptjs";
 
-const sql = postgres("postgresql://postgres.pqxkibkbwmbcdnbmzxgc:%40Dnflwlq01%21@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres");
+const sql = postgres(process.env.DATABASE_URL || "postgresql://postgres:cc1818efc73c5bdcd8ca873743bb0af7@localhost:5436/aisc");
 const TENANT = "23b256fb-68d8-49ba-b49e-a1f86550ce31";
 const USER = "46817658-ba49-4599-ae9f-75807406fa1b";
 
@@ -14,11 +16,22 @@ async function addPart(catMap, catName, modelName, manufacturer, specs, listPric
 }
 
 async function main() {
-  // Step 1: 중복 테넌트 삭제
-  await sql`DELETE FROM ai_server_composer.tenants WHERE id != ${TENANT}`;
-  console.log("Step 1: 중복 테넌트 정리 완료");
+  // Step 0: 기존 데이터 전체 클린업 (CASCADE로 하위 테이블도 삭제됨)
+  await sql`DELETE FROM ai_server_composer.tenants`;
+  console.log("Step 0: 기존 데이터 전체 클린업 완료");
 
-  // Step 2: 카테고리 14개
+  // Step 1: 테넌트 생성
+  await sql`INSERT INTO ai_server_composer.tenants (id, company_name, business_number, ceo_name, address, business_type, business_item, phone, email, quotation_prefix)
+    VALUES (${TENANT}, '테스트 IT솔루션', '123-45-67890', '홍길동', '서울시 강남구 테헤란로 123', '정보통신업', '서버/네트워크 장비', '02-1234-5678', 'admin@test-it.co.kr', 'QT')`;
+  console.log("Step 1: 테넌트 생성 완료");
+
+  // Step 2: 사용자 생성 (super_admin)
+  const passwordHash = await bcryptjs.hash("@Dnflwlq01", 12);
+  await sql`INSERT INTO ai_server_composer.users (id, tenant_id, email, password_hash, name, phone, department, role)
+    VALUES (${USER}, ${TENANT}, 'yhk71261@gmail.com', ${passwordHash}, '관리자', '010-0000-0000', '개발팀', 'super_admin')`;
+  console.log("Step 2: 사용자(super_admin) 생성 완료 — yhk71261@gmail.com");
+
+  // Step 3: 카테고리 14개
   const categories = [
     { name: "cpu", display: "CPU", group: "server_parts", specs: ["cores","threads","socket","tdp_w"] },
     { name: "memory", display: "메모리", group: "server_parts", specs: ["type","capacity_gb","speed_mhz","ecc"] },
@@ -40,13 +53,13 @@ async function main() {
       VALUES (${TENANT}, ${c.name}, ${c.display}, ${c.group}, ${JSON.stringify(c.specs)}::jsonb, true)
       ON CONFLICT (tenant_id, name) DO NOTHING`;
   }
-  console.log("Step 2: 카테고리 14개 완료");
+  console.log("Step 3: 카테고리 14개 완료");
 
   const cats = await sql`SELECT id, name FROM ai_server_composer.part_categories WHERE tenant_id = ${TENANT}`;
   const catMap = {};
   cats.forEach(c => catMap[c.name] = c.id);
 
-  // Step 3: 부품 투입
+  // Step 4: 부품 투입
   // CPU 15개
   await addPart(catMap,"cpu","Xeon w5-3435X","Intel",{cores:16,threads:32,socket:"LGA4677",tdp_w:270},1200000,1050000,870000);
   await addPart(catMap,"cpu","Xeon w7-3465X","Intel",{cores:28,threads:56,socket:"LGA4677",tdp_w:300},3800000,3400000,2700000);
@@ -141,7 +154,7 @@ async function main() {
   const totalParts = await sql`SELECT count(*) FROM ai_server_composer.parts WHERE tenant_id = ${TENANT}`;
   console.log("총 부품:", totalParts[0].count);
 
-  // Step 4: 거래처 5개
+  // Step 5: 거래처 5개
   const customerData = [
     ["한국전력공사","305-82-00001","김사장","서울시 서초구","공기업","전력","public"],
     ["국방과학연구소","123-82-00002","이원장","대전시 유성구","연구기관","방위산업","public"],
@@ -153,9 +166,9 @@ async function main() {
     await sql`INSERT INTO ai_server_composer.customers (tenant_id, company_name, business_number, ceo_name, address, business_type, business_item, customer_type)
       VALUES (${TENANT}, ${cn}, ${bn}, ${ceo}, ${addr}, ${bt}, ${bi}, ${ct})`;
   }
-  console.log("Step 4: 거래처 5개 완료");
+  console.log("Step 5: 거래처 5개 완료");
 
-  // Step 5: 견적 3건 + 낙찰이력
+  // Step 6: 견적 3건 + 낙찰이력
   const customers = await sql`SELECT id FROM ai_server_composer.customers WHERE tenant_id = ${TENANT} LIMIT 3`;
   const validity = new Date(Date.now() + 30*24*60*60*1000).toISOString().split("T")[0];
   const types = ["profitability","spec_match","performance"];
@@ -173,10 +186,11 @@ async function main() {
         VALUES (${q.id}, ${i === 0 ? "won" : "lost"}, ${i === 0 ? "최저가 입찰 성공" : "경쟁사 대비 가격 열위"}, ${USER})`;
     }
   }
-  console.log("Step 5: 견적 3건 + 낙찰이력 2건 완료");
+  console.log("Step 6: 견적 3건 + 낙찰이력 2건 완료");
 
   await sql.end();
   console.log("\n=== 전체 시드 데이터 투입 완료 ===");
+  console.log("로그인: yhk71261@gmail.com / @Dnflwlq01");
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

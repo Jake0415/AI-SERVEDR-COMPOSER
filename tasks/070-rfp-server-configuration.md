@@ -1,14 +1,23 @@
 ---
 id: "070-A"
 title: "서버 구성 시작 페이지 + RFP 연결"
-status: "planned"
+status: "completed"
 priority: "high"
 phase: "7"
 estimated_effort: "2d"
-dependencies: ["016", "017"]
+dependencies: ["016", "017", "074"]
 ---
 
+> ℹ️ **재분류**: 이 Task는 독립적인 견적 생성 방식이 아닌 **시나리오 1(RFP 기반 견적)의 하위 프로세스**로 재분류되었습니다. RFP 기반 견적 생성 후 서버별 부품을 수동으로 세부 조정하는 선택적 단계입니다. Task 074(견적 생성 허브)에 의존합니다.
+
 # Task 070-A: 서버 구성 시작 페이지 + RFP 연결
+
+## 현재 구현 상태
+
+- ✅ `/quotation/configure` 페이지 UI 구현 (RFP 목록 카드, 자동/수동 구성 버튼)
+- ✅ `/api/assembly/compatible-parts` 호환 부품 조회 API 존재
+- ✅ 거래처 선택 우선 흐름 적용 (`customer_id` URL 파라미터 전달)
+- ⚠️ 전체 워크플로우 통합 테스트 미완료
 
 ## 목표
 RFP 파싱 결과에서 추출된 서버 장비 리스트를 카드로 표시하고, 각 서버에 대해 자동/수동 구성을 선택할 수 있는 시작 페이지.

@@ -44,9 +44,6 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Drizzle 마이그레이션/시드 파일 복사 (초기화용)
-COPY --from=builder /app/drizzle ./drizzle
-
 # 업로드 디렉토리 생성
 RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
 

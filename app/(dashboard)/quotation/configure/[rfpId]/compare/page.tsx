@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Loader2,
@@ -126,7 +126,9 @@ function categoryLabel(category: string): string {
 export default function ComparePage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const rfpId = params.rfpId as string;
+  const customerId = searchParams.get("customer_id") ?? "";
 
   // 상태
   const [rfpDoc, setRfpDoc] = useState<RfpDocument | null>(null);
@@ -143,7 +145,7 @@ export default function ComparePage() {
   const [customersLoading, setCustomersLoading] = useState(false);
 
   // 견적 확정 폼
-  const [formCustomerId, setFormCustomerId] = useState("");
+  const [formCustomerId, setFormCustomerId] = useState(customerId);
   const [formDeliveryTerms, setFormDeliveryTerms] = useState("납품일로부터 2주 이내");
   const [formPaymentTerms, setFormPaymentTerms] = useState("납품 후 30일 이내");
   const [formValidityDays, setFormValidityDays] = useState("30");

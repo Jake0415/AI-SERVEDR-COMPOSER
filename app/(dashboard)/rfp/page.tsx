@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, FileText, Loader2, Server, ServerCog } from "lucide-react";
+import { CustomerBanner } from "@/components/quotation/customer-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +51,8 @@ function statusBadge(status: string) {
 
 export default function RfpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const customerId = searchParams.get("customer_id") ?? "";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [uploading, setUploading] = useState(false);
@@ -126,6 +129,9 @@ export default function RfpPage() {
 
   return (
     <div className="space-y-6">
+      {/* 거래처 배너 */}
+      {customerId && <CustomerBanner customerId={customerId} />}
+
       {/* 제목 */}
       <div>
         <h2 className="text-2xl font-bold">RFP 업로드</h2>
@@ -247,8 +253,10 @@ export default function RfpPage() {
           </div>
           <Button
             onClick={() =>
-              router.push(`/quotation?rfp_id=${uploadResult.rfp_id}`)
+              router.push(`/quotation/result?rfp_id=${uploadResult.rfp_id}&customer_id=${customerId}`)
             }
+            disabled={!customerId}
+            title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
           >
             이 RFP로 견적 생성
           </Button>
@@ -300,9 +308,11 @@ export default function RfpPage() {
                             variant="outline"
                             onClick={() =>
                               router.push(
-                                `/quotation/configure?rfp_id=${rfp.id}`
+                                `/quotation/configure?rfp_id=${rfp.id}&customer_id=${customerId}`
                               )
                             }
+                            disabled={!customerId}
+                            title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
                           >
                             <ServerCog className="h-3.5 w-3.5 mr-1.5" />
                             서버 구성
@@ -311,8 +321,10 @@ export default function RfpPage() {
                             size="sm"
                             variant="outline"
                             onClick={() =>
-                              router.push(`/quotation?rfp_id=${rfp.id}`)
+                              router.push(`/quotation/result?rfp_id=${rfp.id}&customer_id=${customerId}`)
                             }
+                            disabled={!customerId}
+                            title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
                           >
                             견적 생성
                           </Button>

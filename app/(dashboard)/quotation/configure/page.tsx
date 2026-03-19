@@ -48,6 +48,7 @@ export default function ConfigurePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const rfpId = searchParams.get("rfp_id");
+  const customerId = searchParams.get("customer_id") ?? "";
 
   // RFP 상세 데이터
   const [rfpDoc, setRfpDoc] = useState<RfpDocument | null>(null);
@@ -112,17 +113,17 @@ export default function ConfigurePage() {
 
   // RFP 선택 → URL 갱신
   const handleSelectRfp = (id: string) => {
-    router.push(`/quotation/configure?rfp_id=${id}`);
+    router.push(`/quotation/configure?rfp_id=${id}&customer_id=${customerId}`);
   };
 
   // 자동 구성 → 위저드로 이동 (auto 모드)
   const handleAutoConfig = (configIndex: number) => {
-    router.push(`/quotation/configure/${rfpId}/${configIndex}?mode=auto`);
+    router.push(`/quotation/configure/${rfpId}/${configIndex}?mode=auto&customer_id=${customerId}`);
   };
 
   // 수동 구성 → 위저드로 이동 (manual 모드)
   const handleManualConfig = (configIndex: number) => {
-    router.push(`/quotation/configure/${rfpId}/${configIndex}?mode=manual`);
+    router.push(`/quotation/configure/${rfpId}/${configIndex}?mode=manual&customer_id=${customerId}`);
   };
 
   // ─── rfp_id 없을 때: RFP 선택 화면 ───
@@ -251,6 +252,11 @@ export default function ConfigurePage() {
             {" "}({configs.length}개 서버 구성)
           </p>
         </div>
+        <Button
+          onClick={() => router.push(`/quotation/configure/${rfpId}/compare?customer_id=${customerId}`)}
+        >
+          견적 비교 및 확정
+        </Button>
       </div>
 
       <Separator />

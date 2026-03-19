@@ -6,7 +6,7 @@
 
 import { redirect } from "next/navigation";
 import { db, tenants, users } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { hashPassword, verifyPassword } from "./password";
 import { setSessionCookie, clearSessionCookie, getSessionFromCookie } from "./jwt";
 import type { UserRole } from "@/lib/types";
@@ -25,6 +25,12 @@ export async function setupAction(formData: {
   businessType: string;
   businessItem: string;
 }): Promise<{ error: string } | undefined> {
+  // 이중 검증: 이미 사용자가 존재하면 차단
+  const existing = await db.select({ count: sql<number>`count(*)` }).from(users);
+  if ((existing[0]?.count ?? 0) > 0) {
+    return { error: "이미 초기 설정이 완료되었습니다." };
+  }
+
   const passwordHash = await hashPassword(formData.password);
 
   // 1. 테넌트 생성

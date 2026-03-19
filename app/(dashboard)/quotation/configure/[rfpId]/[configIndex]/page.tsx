@@ -170,25 +170,41 @@ export default function WizardPage() {
 
     async function autoFill() {
       try {
-        // 섀시
+        const req = rfpConfig?.requirements;
+        const needGpu = req?.gpu && req.gpu.min_count > 0;
+
+        // 섀시: GPU 필요 시 2U 이상 우선
         const chassisRes = await fetch("/api/assembly/compatible-parts?category=chassis");
         const chassisJson = await chassisRes.json();
         const chassisList: PartItem[] = chassisJson.success ? chassisJson.data : [];
+        const bestChassis = needGpu
+          ? chassisList.find((c) => Number(c.specs?.u_size) >= 2) ?? chassisList[0]
+          : chassisList[0];
 
         // 메인보드
         const mbRes = await fetch("/api/assembly/compatible-parts?category=motherboard");
         const mbJson = await mbRes.json();
         const mbList: PartItem[] = mbJson.success ? mbJson.data : [];
 
-        // CPU
+        // CPU: 코어 수 요구사항 충족하는 부품 우선
         const cpuRes = await fetch("/api/assembly/compatible-parts?category=cpu");
         const cpuJson = await cpuRes.json();
         const cpuList: PartItem[] = cpuJson.success ? cpuJson.data : [];
+        const minCores = req?.cpu?.min_cores ?? 0;
+        const bestCpu = cpuList.find((c) => Number(c.specs?.cores) >= minCores) ?? cpuList[0];
 
-        // 메모리
+        // 메모리: 용량 요구사항 기반 최적 DIMM 선택
         const memRes = await fetch("/api/assembly/compatible-parts?category=memory");
         const memJson = await memRes.json();
         const memList: PartItem[] = memJson.success ? memJson.data : [];
+        const minMemGb = req?.memory?.min_capacity_gb ?? 32;
+        // 필요 용량에 가장 가까운 DIMM 선택 (32GB/64GB/128GB)
+        const bestMem = memList.sort((a, b) =>
+          Math.abs(Number(a.specs?.capacity_gb ?? 32) - Math.min(minMemGb, 128)) -
+          Math.abs(Number(b.specs?.capacity_gb ?? 32) - Math.min(minMemGb, 128))
+        )[0] ?? memList[0];
+        const dimmCapacity = Number(bestMem?.specs?.capacity_gb ?? 32);
+        const memQty = Math.max(2, Math.ceil(minMemGb / dimmCapacity));
 
         // PSU
         const psuRes = await fetch("/api/assembly/compatible-parts?category=psu");
@@ -197,13 +213,11 @@ export default function WizardPage() {
 
         setState((prev) => ({
           ...prev,
-          chassis: chassisList[0] ? { ...chassisList[0], quantity: 1 } : null,
+          chassis: bestChassis ? { ...bestChassis, quantity: 1 } : null,
           motherboard: mbList[0] ? { ...mbList[0], quantity: 1 } : null,
-          cpu: cpuList[0] ? { ...cpuList[0], quantity: 1 } : null,
-          memory: memList[0] ? { ...memList[0], quantity: 1 } : null,
-          memoryQuantity: rfpConfig?.requirements.memory
-            ? Math.max(1, Math.ceil((rfpConfig.requirements.memory.min_capacity_gb ?? 32) / 32))
-            : 2,
+          cpu: bestCpu ? { ...bestCpu, quantity: 1 } : null,
+          memory: bestMem ? { ...bestMem, quantity: 1 } : null,
+          memoryQuantity: memQty,
           psu: psuList[0] ? { ...psuList[0], quantity: 1 } : null,
         }));
 

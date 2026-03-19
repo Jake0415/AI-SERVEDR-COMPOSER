@@ -1,7 +1,7 @@
 ---
 id: "070-C"
 title: "전략 비교 + 견적 확정"
-status: "planned"
+status: "completed"
 priority: "high"
 phase: "7"
 estimated_effort: "1d"
@@ -9,6 +9,13 @@ dependencies: ["070-B", "017", "018"]
 ---
 
 # Task 070-C: 전략 비교 + 견적 확정
+
+## 현재 구현 상태
+
+- ✅ `/quotation/configure/[rfpId]/compare` 비교 페이지 UI 스텁 존재
+- ❌ 3가지 전략 비교 테이블 미구현
+- ❌ AI 추천 텍스트 미연동
+- ❌ 최종 견적 확정 → quotation-history 연결 미완성
 
 ## 목표
 모든 서버 구성이 완료된 후, 3가지 전략(수익성/규격/성능)으로 비교하고 최종 견적을 확정하는 화면.
