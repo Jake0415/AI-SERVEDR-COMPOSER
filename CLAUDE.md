@@ -190,3 +190,30 @@ interface ApiResponse<T> {
 - 레이아웃: `components/layout/`에 공통 레이아웃
 - 프로바이더: `components/providers/`에 Context Provider 래퍼
 - 사용자 대면 텍스트는 한국어로 작성
+
+## 개발 워크플로우
+
+### 코드 수정 → 검증 → 보고 절차
+
+1. **코드 수정**: 요청 사항 구현
+2. **로컬 dev 서버 실행**: `npx next dev -p 5555`
+3. **Playwright 검증** (MCP 사용):
+   - 로그인: `yhk71261@gmail.com` / `@Dnflwlq01!`
+   - 수정된 페이지 접속 및 기능 테스트
+   - 스크린샷 캡처 (`browser_take_screenshot`)
+4. **결과 보고**: 성공/실패 + 스크린샷 + 에러 메시지
+5. **실패 시**: 에러 분석 → 수정 → 재검증 (자동 반복)
+6. **성공 시**: git commit + push, Docker rebuild는 요청 시에만
+
+### 환경 구분
+
+| 용도 | 환경 | 접속 |
+|------|------|------|
+| 개발 + 테스트 | `npx next dev -p 5555` | `localhost:5555` |
+| Docker 프로덕션 | `docker-compose` | `localhost:3200` |
+| Vercel 배포 | `git push` 자동 | `ai-servedr-composer.vercel.app` |
+
+### 테스트 계정
+- 이메일: `yhk71261@gmail.com`
+- 비밀번호: `@Dnflwlq01!`
+- 역할: super_admin

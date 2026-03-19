@@ -3,7 +3,7 @@
 // ============================================================
 
 import Link from "next/link";
-import { FolderTree, Building2, Bell } from "lucide-react";
+import { FolderTree, Building2, Bell, Palette } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -23,6 +23,12 @@ const settingsMenu = [
     title: "회사 정보",
     description: "회사 기본 정보, 로고, 직인, 계좌 정보 관리",
     icon: Building2,
+  },
+  {
+    href: "/settings/theme",
+    title: "테마 설정",
+    description: "색상 테마 및 라이트/다크 모드 설정",
+    icon: Palette,
   },
   {
     href: "/settings",

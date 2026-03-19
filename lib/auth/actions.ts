@@ -65,7 +65,7 @@ export async function setupAction(formData: {
 export async function loginAction(formData: {
   email: string;
   password: string;
-}): Promise<{ error: string } | undefined> {
+}): Promise<{ error?: string; success?: boolean }> {
   const rows = await db
     .select()
     .from(users)
@@ -90,7 +90,7 @@ export async function loginAction(formData: {
     role: user.role,
   });
 
-  redirect("/dashboard");
+  return { success: true };
 }
 
 /** 로그아웃 */

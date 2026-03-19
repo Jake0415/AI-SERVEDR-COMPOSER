@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ interface LoginFormData {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
@@ -26,6 +28,8 @@ export default function LoginPage() {
     if (result?.error) {
       setError(result.error);
       setLoading(false);
+    } else if (result?.success) {
+      router.push("/dashboard");
     }
   };
 
