@@ -62,7 +62,6 @@ function parseSpecs(specs: unknown): Record<string, string | number> {
 export default function EquipmentTab() {
   const [codeTree, setCodeTree] = useState<CodeNode[]>([]);
   const [majorCode, setMajorCode] = useState("");
-  const [minorCode, setMinorCode] = useState("");
   const [items, setItems] = useState<EquipmentProduct[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -73,7 +72,6 @@ export default function EquipmentTab() {
   // 추가 Dialog
   const [addOpen, setAddOpen] = useState(false);
   const [addMajor, setAddMajor] = useState("");
-  const [addMinor, setAddMinor] = useState("");
   const [addItem, setAddItem] = useState("");
   const [addModel, setAddModel] = useState("");
   const [addMfr, setAddMfr] = useState("");
@@ -128,7 +126,6 @@ export default function EquipmentTab() {
     try {
       const params = new URLSearchParams();
       if (majorCode) params.set("major_code", majorCode);
-      if (minorCode) params.set("minor_code", minorCode);
       if (search) params.set("search", search);
       params.set("page", String(page));
       params.set("limit", String(limit));
@@ -141,20 +138,15 @@ export default function EquipmentTab() {
         }
       }
     } catch {} finally { setLoading(false); }
-  }, [majorCode, minorCode, search, page]);
+  }, [majorCode, search, page]);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   // 대분류 변경 시 중분류 리셋
   const handleMajorChange = (code: string) => {
     setMajorCode(code);
-    setMinorCode("");
     setPage(1);
   };
-
-  // 현재 대분류의 중분류 목록
-  const selectedMajor = codeTree.find(n => n.code === majorCode);
-  const minorOptions = selectedMajor?.children ?? [];
 
   // 추가
   const handleAdd = async () => {
@@ -212,11 +204,9 @@ export default function EquipmentTab() {
     } catch {} finally { setHistoryLoading(false); }
   };
 
-  // 추가 Dialog에서 캐스케이드 옵션
+  // 추가 Dialog: 대분류 → 장비명(level 3) 직접 선택
   const addMajorNode = codeTree.find(n => n.code === addMajor);
-  const addMinorOptions = addMajorNode?.children ?? [];
-  const addMinorNode = addMinorOptions.find(n => n.code === addMinor);
-  const addItemOptions = addMinorNode?.children ?? [];
+  const addItemOptions = (addMajorNode?.children ?? []).flatMap(mid => mid.children ?? []);
 
   const totalPages = Math.ceil(total / limit);
 
@@ -226,7 +216,7 @@ export default function EquipmentTab() {
       {/* 버튼 영역 */}
       <div className="flex items-center justify-end">
         {isAdmin && (
-          <Button onClick={() => { setAddMajor(""); setAddMinor(""); setAddItem(""); setAddModel(""); setAddMfr(""); setAddListPrice(0); setAddMarketPrice(0); setAddSupplyPrice(0); setAddOpen(true); }}>
+          <Button onClick={() => { setAddMajor(""); setAddItem(""); setAddModel(""); setAddMfr(""); setAddListPrice(0); setAddMarketPrice(0); setAddSupplyPrice(0); setAddOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />
             장비 제품 추가
           </Button>
@@ -242,18 +232,6 @@ export default function EquipmentTab() {
           </Button>
         ))}
       </div>
-
-      {/* 중분류 필터 */}
-      {majorCode && minorOptions.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          <Button variant={minorCode === "" ? "secondary" : "ghost"} size="sm" onClick={() => { setMinorCode(""); setPage(1); }}>전체</Button>
-          {minorOptions.map(n => (
-            <Button key={n.code} variant={minorCode === n.code ? "secondary" : "ghost"} size="sm" onClick={() => { setMinorCode(n.code); setPage(1); }}>
-              {n.name}
-            </Button>
-          ))}
-        </div>
-      )}
 
       {/* 검색 */}
       <form onSubmit={(e) => { e.preventDefault(); setPage(1); fetchProducts(); }} className="flex gap-2 max-w-md">
@@ -355,21 +333,13 @@ export default function EquipmentTab() {
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>IT 인프라 장비 제품 추가</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>대분류</Label>
-                <select value={addMajor} onChange={(e) => { setAddMajor(e.target.value); setAddMinor(""); setAddItem(""); }}
+                <select value={addMajor} onChange={(e) => { setAddMajor(e.target.value); setAddItem(""); }}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
                   <option value="">선택</option>
                   {codeTree.map(n => <option key={n.code} value={n.code}>{n.name}</option>)}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label>중분류</Label>
-                <select value={addMinor} onChange={(e) => { setAddMinor(e.target.value); setAddItem(""); }}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
-                  <option value="">선택</option>
-                  {addMinorOptions.map(n => <option key={n.code} value={n.code}>{n.name}</option>)}
                 </select>
               </div>
               <div className="space-y-2">
