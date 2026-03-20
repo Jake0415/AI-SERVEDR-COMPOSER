@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Search, Pencil, Trash2, History, Loader2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, History, Loader2, Eye } from "lucide-react";
 
 interface CodeNode {
   id: string; code: string; name: string; level: number; children: CodeNode[];
@@ -90,6 +90,10 @@ export default function ServerPartsTab() {
   const [historyTarget, setHistoryTarget] = useState<PartItem | null>(null);
   const [historyData, setHistoryData] = useState<PriceHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  // 상세보기
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailTarget, setDetailTarget] = useState<PartItem | null>(null);
 
   const limit = 20;
 
@@ -309,6 +313,7 @@ export default function ServerPartsTab() {
                   {isAdmin && (
                     <TableCell>
                       <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" title="자세히 보기" onClick={() => { setDetailTarget(item); setDetailOpen(true); }}><Eye className="h-4 w-4 text-blue-500" /></Button>
                         <Button variant="ghost" size="icon" title="가격 이력" onClick={() => openHistory(item)}><History className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(item)}><Pencil className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => { setDeleteTarget(item); setDeleteOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -441,6 +446,57 @@ export default function ServerPartsTab() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* 상세보기 Dialog */}
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>부품 상세 정보 — {detailTarget?.modelName}</DialogTitle></DialogHeader>
+          {detailTarget && (
+            <div className="space-y-5 max-h-[500px] overflow-auto">
+              <div>
+                <h4 className="text-sm font-semibold mb-2 text-muted-foreground">기본 정보</h4>
+                <div className="grid grid-cols-[100px_1fr] gap-y-1.5 text-sm">
+                  <span className="text-muted-foreground">파트코드</span>
+                  <span><Badge variant="outline" className="font-mono text-xs">{detailTarget.partCodeCode ?? "-"}</Badge></span>
+                  <span className="text-muted-foreground">분류</span>
+                  <span>{getCodePath(detailTarget)}</span>
+                  <span className="text-muted-foreground">모델명</span>
+                  <span className="font-medium">{detailTarget.modelName}</span>
+                  <span className="text-muted-foreground">제조사</span>
+                  <span>{detailTarget.manufacturer}</span>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold mb-2 text-muted-foreground">가격 정보</h4>
+                <div className="grid grid-cols-[100px_1fr] gap-y-1.5 text-sm">
+                  <span className="text-muted-foreground">리스트가</span>
+                  <span className="tabular-nums">{formatPrice(detailTarget.listPrice)}원</span>
+                  <span className="text-muted-foreground">시장가</span>
+                  <span className="tabular-nums">{formatPrice(detailTarget.marketPrice)}원</span>
+                  <span className="text-muted-foreground">공급가</span>
+                  <span className="tabular-nums font-medium">{formatPrice(detailTarget.supplyPrice)}원</span>
+                </div>
+              </div>
+              {detailTarget.specs && typeof detailTarget.specs === "object" && Object.keys(detailTarget.specs).length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold mb-2 text-muted-foreground">상세 스펙</h4>
+                  <div className="grid grid-cols-[120px_1fr] gap-y-1.5 text-sm">
+                    {Object.entries(detailTarget.specs).map(([k, v]) => (
+                      <div key={k} className="contents">
+                        <span className="text-muted-foreground">{k}</span>
+                        <span>{String(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div>
+                <h4 className="text-sm font-semibold mb-2 text-muted-foreground">추가 정보</h4>
+                <p className="text-sm text-muted-foreground">제품번호, 시리얼, 보증기간, 인증 등 — 데이터 입력 시 자동 표시됩니다.</p>
+              </div>
             </div>
           )}
         </DialogContent>

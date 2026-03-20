@@ -181,10 +181,10 @@ async function main() {
   await addPart(catMap,"motherboard","KRPA-U16 SP3 Dual","ASUS",{socket:"SP3",memory_slots:32,memory_type:"DDR4"},1200000,1050000,790000);
   console.log("메인보드 3개 완료");
 
-  // 섀시 3개
-  await addPart(catMap,"chassis","SYS-421GE 4U GPU","Supermicro",{form_factor:"4U",u_size:4,max_drive_bays:24},3500000,3050000,2300000);
-  await addPart(catMap,"chassis","SC826BAC4 2U Storage","Supermicro",{form_factor:"2U",u_size:2,max_drive_bays:12},1200000,1050000,790000);
-  await addPart(catMap,"chassis","SC813MF2TQ 1U Compute","Supermicro",{form_factor:"1U",u_size:1,max_drive_bays:4},650000,570000,430000);
+  // 섀시 3개 (풍부한 스펙 데이터)
+  await addPart(catMap,"chassis","SYS-421GE 4U GPU","Supermicro",{form_factor:"4U",u_size:4,max_drive_bays:24,cpu_sockets:2,max_memory_gb:2048,gpu_slots:8,pcie_slots:"8x PCIe 5.0 x16",psu:"2200W redundant",network:"2x 25GbE",weight_kg:30,dimensions:"437x178x711mm"},3500000,3050000,2300000);
+  await addPart(catMap,"chassis","SC826BAC4 2U Storage","Supermicro",{form_factor:"2U",u_size:2,max_drive_bays:12,cpu_sockets:2,max_memory_gb:512,pcie_slots:"4x PCIe 4.0 x8",psu:"740W redundant",network:"2x GbE",weight_kg:15,dimensions:"437x89x650mm"},1200000,1050000,790000);
+  await addPart(catMap,"chassis","SC813MF2TQ 1U Compute","Supermicro",{form_factor:"1U",u_size:1,max_drive_bays:4,cpu_sockets:1,max_memory_gb:128,pcie_slots:"1x PCIe 4.0 x16",psu:"350W",network:"2x GbE",weight_kg:8,dimensions:"437x43x503mm"},650000,570000,430000);
   console.log("섀시 3개 완료");
 
   const totalParts = await sql`SELECT count(*) FROM ai_server_composer.parts WHERE tenant_id = ${TENANT}`;
