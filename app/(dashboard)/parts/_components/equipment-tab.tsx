@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Search, Pencil, Trash2, History, Loader2 } from "lucide-react";
 
 interface CodeNode {
@@ -207,6 +208,7 @@ export default function EquipmentTab() {
   const totalPages = Math.ceil(total / limit);
 
   return (
+    <TooltipProvider>
     <div className="space-y-4">
       {/* 버튼 영역 */}
       <div className="flex items-center justify-end">
@@ -286,7 +288,22 @@ export default function EquipmentTab() {
                   <TableCell className="text-muted-foreground">{(page - 1) * limit + idx + 1}</TableCell>
                   <TableCell><Badge variant="outline" className="font-mono text-xs">{item.equipmentCode}</Badge></TableCell>
                   <TableCell className="text-sm text-muted-foreground">{item.codePath}</TableCell>
-                  <TableCell className="font-medium">{item.modelName}</TableCell>
+                  <TableCell>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="font-medium cursor-default">{item.modelName}</span>
+                      </TooltipTrigger>
+                      {item.specs && typeof item.specs === "object" && Object.keys(item.specs).length > 0 && (
+                        <TooltipContent side="right" className="max-w-xs">
+                          <div className="space-y-1 text-xs">
+                            {Object.entries(item.specs).map(([k, v]) => (
+                              <div key={k}><span className="font-semibold">{k}:</span> {String(v)}</div>
+                            ))}
+                          </div>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TableCell>
                   <TableCell>{item.manufacturer}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatPrice(item.listPrice)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatPrice(item.marketPrice)}</TableCell>
@@ -439,5 +456,6 @@ export default function EquipmentTab() {
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }

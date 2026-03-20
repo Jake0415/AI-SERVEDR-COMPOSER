@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Search, Pencil, Trash2, History, Loader2 } from "lucide-react";
 
 interface CodeNode {
@@ -47,14 +48,6 @@ interface PriceHistory {
 function formatPrice(v: number | null | undefined): string {
   if (v == null) return "-";
   return v.toLocaleString("ko-KR");
-}
-
-function formatSpecs(specs: Record<string, string | number>): string {
-  if (!specs || typeof specs !== "object") return "-";
-  return Object.entries(specs)
-    .filter(([, v]) => v != null && v !== "")
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(", ") || "-";
 }
 
 export default function ServerPartsTab() {
@@ -225,6 +218,7 @@ export default function ServerPartsTab() {
   };
 
   return (
+    <TooltipProvider>
     <div className="space-y-4">
       {/* 버튼 영역 */}
       <div className="flex items-center justify-end">
@@ -265,7 +259,6 @@ export default function ServerPartsTab() {
               <TableHead>분류</TableHead>
               <TableHead>모델명</TableHead>
               <TableHead>제조사</TableHead>
-              <TableHead>주요 스펙</TableHead>
               <TableHead className="text-right">리스트가</TableHead>
               <TableHead className="text-right">시장가</TableHead>
               <TableHead className="text-right">공급가</TableHead>
@@ -276,14 +269,14 @@ export default function ServerPartsTab() {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={`sk-${i}`}>
-                  {Array.from({ length: isAdmin ? 10 : 9 }).map((_, j) => (
+                  {Array.from({ length: isAdmin ? 9 : 8 }).map((_, j) => (
                     <TableCell key={`sk-${i}-${j}`}><Skeleton className="h-4 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 10 : 9} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={isAdmin ? 9 : 8} className="h-24 text-center text-muted-foreground">
                   등록된 서버 파트가 없습니다.
                 </TableCell>
               </TableRow>
@@ -293,9 +286,23 @@ export default function ServerPartsTab() {
                   <TableCell className="text-muted-foreground">{(page - 1) * limit + idx + 1}</TableCell>
                   <TableCell><Badge variant="outline" className="font-mono text-xs">{item.partCodeCode ?? "-"}</Badge></TableCell>
                   <TableCell className="text-sm text-muted-foreground">{getCodePath(item)}</TableCell>
-                  <TableCell className="font-medium">{item.modelName}</TableCell>
+                  <TableCell>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="font-medium cursor-default">{item.modelName}</span>
+                      </TooltipTrigger>
+                      {item.specs && typeof item.specs === "object" && Object.keys(item.specs).length > 0 && (
+                        <TooltipContent side="right" className="max-w-xs">
+                          <div className="space-y-1 text-xs">
+                            {Object.entries(item.specs).map(([k, v]) => (
+                              <div key={k}><span className="font-semibold">{k}:</span> {String(v)}</div>
+                            ))}
+                          </div>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TableCell>
                   <TableCell>{item.manufacturer}</TableCell>
-                  <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">{formatSpecs(item.specs)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatPrice(item.listPrice)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatPrice(item.marketPrice)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatPrice(item.supplyPrice)}</TableCell>
@@ -439,5 +446,6 @@ export default function ServerPartsTab() {
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
