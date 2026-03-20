@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -17,7 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Search, Pencil, Trash2, History, Loader2, Eye } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Search, Pencil, Trash2, History, Loader2, Eye, FileSpreadsheet } from "lucide-react";
 
 interface CodeNode {
   id: string; code: string; name: string; level: number; children: CodeNode[];
@@ -48,6 +51,15 @@ interface PriceHistory {
 function formatPrice(v: number | null | undefined): string {
   if (v == null) return "-";
   return v.toLocaleString("ko-KR");
+}
+
+function parseSpecs(specs: unknown): Record<string, string | number> {
+  if (!specs) return {};
+  if (typeof specs === "object" && !Array.isArray(specs)) return specs as Record<string, string | number>;
+  if (typeof specs === "string") {
+    try { const p = JSON.parse(specs); return typeof p === "object" ? p : {}; } catch { return {}; }
+  }
+  return {};
 }
 
 export default function ServerPartsTab() {
@@ -94,6 +106,9 @@ export default function ServerPartsTab() {
   // 상세보기
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailTarget, setDetailTarget] = useState<PartItem | null>(null);
+
+  // 엑셀
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const limit = 20;
 
@@ -201,6 +216,37 @@ export default function ServerPartsTab() {
     } catch {} finally { setHistoryLoading(false); }
   };
 
+  // 엑셀 다운로드
+  const downloadTemplate = async () => {
+    const res = await fetch("/api/parts/excel-template");
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "server-parts-template.xlsx"; a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  // 엑셀 업로드
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/parts/excel-upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (json.success) {
+        alert(`${json.data?.inserted ?? 0}건 등록, ${json.data?.updated ?? 0}건 수정 완료`);
+        fetchParts();
+      } else {
+        alert(json.error?.message ?? "업로드 실패");
+      }
+    } catch { alert("업로드 오류"); }
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
   // 추가 Dialog에서 캐스케이드 옵션
   const addMajorNode = codeTree.find(n => n.code === addMajor);
   const addPartCodeOptions = addMajorNode?.children ?? [];
@@ -225,13 +271,25 @@ export default function ServerPartsTab() {
     <TooltipProvider>
     <div className="space-y-4">
       {/* 버튼 영역 */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
         {isAdmin && (
           <Button onClick={() => { setAddMajor(""); setAddPartCode(""); setAddModel(""); setAddMfr(""); setAddListPrice(0); setAddMarketPrice(0); setAddSupplyPrice(0); setAddOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />
             부품 추가
           </Button>
         )}
+        {isAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline"><FileSpreadsheet className="mr-2 h-4 w-4" />엑셀 관리</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={downloadTemplate}>템플릿 다운로드</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fileRef.current?.click()}>엑셀 업로드</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelUpload} />
       </div>
 
       {/* 대분류 필터 */}
@@ -295,10 +353,10 @@ export default function ServerPartsTab() {
                       <TooltipTrigger asChild>
                         <span className="font-medium cursor-default">{item.modelName}</span>
                       </TooltipTrigger>
-                      {item.specs && typeof item.specs === "object" && Object.keys(item.specs).length > 0 && (
+                      {Object.keys(parseSpecs(item.specs)).length > 0 && (
                         <TooltipContent side="right" className="max-w-xs">
                           <div className="space-y-1 text-xs">
-                            {Object.entries(item.specs).map(([k, v]) => (
+                            {Object.entries(parseSpecs(item.specs)).map(([k, v]) => (
                               <div key={k}><span className="font-semibold">{k}:</span> {String(v)}</div>
                             ))}
                           </div>

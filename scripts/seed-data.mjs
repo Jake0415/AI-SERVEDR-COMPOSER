@@ -550,18 +550,20 @@ async function main() {
     const [eqCodeRow] = await sql`SELECT id FROM ai_server_composer.equipment_codes
       WHERE tenant_id = ${TENANT} AND code = ${eqCode} LIMIT 1`;
     if (eqCodeRow) {
-      // equipment_products에 UPSERT
-      const [existing] = await sql`SELECT id FROM ai_server_composer.equipment_products
-        WHERE tenant_id = ${TENANT} AND model_name = ${cp.model_name} AND manufacturer = ${cp.manufacturer} LIMIT 1`;
-      if (!existing) {
-        const [ep] = await sql`INSERT INTO ai_server_composer.equipment_products
-          (tenant_id, equipment_code_id, model_name, manufacturer, specs)
-          VALUES (${TENANT}, ${eqCodeRow.id}, ${cp.model_name}, ${cp.manufacturer}, ${JSON.stringify(cp.specs || {})}::jsonb)
-          RETURNING id`;
-        await sql`INSERT INTO ai_server_composer.equipment_product_prices
-          (product_id, list_price, market_price, supply_price)
-          VALUES (${ep.id}, ${cp.list_price || 0}, ${cp.market_price || 0}, ${cp.supply_price || 0})`;
-      }
+      // equipment_products UPSERT (기존 데이터 삭제 후 재삽입하여 specs 이중 직렬화 방지)
+      const specsObj = typeof cp.specs === 'string' ? JSON.parse(cp.specs) : (cp.specs || {});
+      await sql`DELETE FROM ai_server_composer.equipment_product_prices
+        WHERE product_id IN (SELECT id FROM ai_server_composer.equipment_products
+          WHERE tenant_id = ${TENANT} AND model_name = ${cp.model_name} AND manufacturer = ${cp.manufacturer})`;
+      await sql`DELETE FROM ai_server_composer.equipment_products
+        WHERE tenant_id = ${TENANT} AND model_name = ${cp.model_name} AND manufacturer = ${cp.manufacturer}`;
+      const [ep] = await sql`INSERT INTO ai_server_composer.equipment_products
+        (tenant_id, equipment_code_id, model_name, manufacturer, specs)
+        VALUES (${TENANT}, ${eqCodeRow.id}, ${cp.model_name}, ${cp.manufacturer}, ${JSON.stringify(specsObj)}::jsonb)
+        RETURNING id`;
+      await sql`INSERT INTO ai_server_composer.equipment_product_prices
+        (product_id, list_price, market_price, supply_price)
+        VALUES (${ep.id}, ${cp.list_price || 0}, ${cp.market_price || 0}, ${cp.supply_price || 0})`;
     }
     // 원본 parts에서 소프트 삭제
     await sql`UPDATE ai_server_composer.parts SET is_deleted = true, deleted_at = NOW() WHERE id = ${cp.id}`;

@@ -50,6 +50,15 @@ function formatPrice(v: number | null | undefined): string {
   return v.toLocaleString("ko-KR");
 }
 
+function parseSpecs(specs: unknown): Record<string, string | number> {
+  if (!specs) return {};
+  if (typeof specs === "object" && !Array.isArray(specs)) return specs as Record<string, string | number>;
+  if (typeof specs === "string") {
+    try { const p = JSON.parse(specs); return typeof p === "object" ? p : {}; } catch { return {}; }
+  }
+  return {};
+}
+
 export default function EquipmentTab() {
   const [codeTree, setCodeTree] = useState<CodeNode[]>([]);
   const [majorCode, setMajorCode] = useState("");
@@ -297,10 +306,10 @@ export default function EquipmentTab() {
                       <TooltipTrigger asChild>
                         <span className="font-medium cursor-default">{item.modelName}</span>
                       </TooltipTrigger>
-                      {item.specs && typeof item.specs === "object" && Object.keys(item.specs).length > 0 && (
+                      {Object.keys(parseSpecs(item.specs)).length > 0 && (
                         <TooltipContent side="right" className="max-w-xs">
                           <div className="space-y-1 text-xs">
-                            {Object.entries(item.specs).map(([k, v]) => (
+                            {Object.entries(parseSpecs(item.specs)).map(([k, v]) => (
                               <div key={k}><span className="font-semibold">{k}:</span> {String(v)}</div>
                             ))}
                           </div>
