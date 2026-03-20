@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
 
-  serverExternalPackages: ["pdf-parse", "postgres"],
+  serverExternalPackages: ["pdf-parse", "postgres", "@langchain/langgraph-checkpoint-postgres"],
 
   experimental: {
     optimizePackageImports: [

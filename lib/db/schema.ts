@@ -1,6 +1,6 @@
 // ============================================================
 // Drizzle ORM 스키마 정의 — ai_server_composer 전용 스키마
-// 25개 테이블 + 인덱스 + CHECK 제약
+// 28개 테이블 + 인덱스 + CHECK 제약
 // ============================================================
 
 import {
@@ -463,4 +463,61 @@ export const equipmentPriceHistory = schema.table("equipment_price_history", {
 }, (table) => [
   index("idx_equipment_price_history_product").on(table.productId),
   index("idx_equipment_price_history_tenant").on(table.tenantId),
+]);
+
+// --- AI 대화 세션 (26) ---
+export const aiChatSessions = schema.table("ai_chat_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  customerId: uuid("customer_id").references(() => customers.id),
+  threadId: text("thread_id").notNull(),
+  mode: text("mode").notNull().default("free"),
+  status: text("status").notNull().default("active"),
+  finalSpecs: jsonb("final_specs"),
+  quotationId: uuid("quotation_id"),
+  messageCount: integer("message_count").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_ai_chat_sessions_user").on(table.userId),
+  index("idx_ai_chat_sessions_tenant").on(table.tenantId),
+  uniqueIndex("idx_ai_chat_sessions_thread").on(table.threadId),
+]);
+
+// --- AI 대화 메시지 (27) ---
+export const aiChatMessages = schema.table("ai_chat_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sessionId: uuid("session_id").notNull().references(() => aiChatSessions.id, { onDelete: "cascade" }),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  specs: jsonb("specs"),
+  tokenCount: integer("token_count"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_ai_chat_messages_session").on(table.sessionId),
+]);
+
+// --- LLM API 호출 로그 (28) ---
+export const llmApiCalls = schema.table("llm_api_calls", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").references(() => users.id),
+  sessionId: uuid("session_id").references(() => aiChatSessions.id),
+  promptSlug: text("prompt_slug").notNull(),
+  modelName: text("model_name").notNull(),
+  promptTokens: integer("prompt_tokens").notNull().default(0),
+  completionTokens: integer("completion_tokens").notNull().default(0),
+  totalTokens: integer("total_tokens").notNull().default(0),
+  estimatedCost: numeric("estimated_cost"),
+  latencyMs: integer("latency_ms"),
+  requestSummary: text("request_summary"),
+  responseSummary: text("response_summary"),
+  status: text("status").notNull().default("success"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_llm_api_calls_tenant").on(table.tenantId),
+  index("idx_llm_api_calls_session").on(table.sessionId),
+  index("idx_llm_api_calls_created").on(table.createdAt),
 ]);

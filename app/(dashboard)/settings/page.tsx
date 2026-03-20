@@ -3,7 +3,7 @@
 // ============================================================
 
 import Link from "next/link";
-import { FolderTree, Building2, Bell, Palette, KeyRound, BrainCircuit, Network, Cpu } from "lucide-react";
+import { FolderTree, Building2, Bell, Palette, KeyRound, BrainCircuit, Network, Cpu, BarChart3 } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -41,6 +41,12 @@ const settingsMenu = [
     title: "AI 프롬프트 관리",
     description: "LLM 시스템 프롬프트 추가, 수정, 삭제 및 버전 관리",
     icon: BrainCircuit,
+  },
+  {
+    href: "/settings/ai-usage",
+    title: "AI 사용량",
+    description: "LLM API 호출 현황, 토큰 사용량 및 비용 모니터링",
+    icon: BarChart3,
   },
   {
     href: "/settings/password",

@@ -676,11 +676,60 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - UI: 대분류→중분류 캐스케이드 필터, 통합 제품 추가 Dialog
   - 컴포넌트 분리: equipment-tab, server-parts-tab, product-add-dialog, price-history-dialog
 
+### Phase 10: LangChain.js + LangGraph.js 기반 AI 대화 시스템
+
+> 현재 OpenAI 직접 호출 래퍼를 LangChain.js/LangGraph.js 기반으로 전환.
+> 대화 이력 영구 저장, 멀티턴 상태 관리, LLM 비용 추적, 대화형 UI 컴포넌트 구현.
+> **FastAPI 불필요 — Next.js 단일 서버로 충분 (Docker self-host, 타임아웃 무제한)**
+
+- 📋 **Task 083: LangChain.js 패키지 설치 + DB 스키마 확장**
+  - 패키지: `@langchain/core`, `@langchain/openai`, `@langchain/langgraph`, `@langchain/langgraph-checkpoint-postgres`
+  - `next.config.ts` serverExternalPackages 추가
+  - DB 테이블 3개 추가:
+    - `ai_chat_sessions` (대화 세션: tenantId, userId, customerId, threadId, mode, status, finalSpecs, quotationId)
+    - `ai_chat_messages` (메시지 이력: sessionId FK, role, content, specs, tokenCount)
+    - `llm_api_calls` (LLM 호출 로그: promptSlug, modelName, promptTokens, completionTokens, estimatedCost, latencyMs, status)
+  - Drizzle migration 실행
+
+- 📋 **Task 084: LangGraph 대화 그래프 구현**
+  - `lib/ai/graph/state.ts` — QuotationChatState (messages, currentSpecs, mode, isComplete, reply, suggestedQuestions)
+  - `lib/ai/graph/nodes/extract-specs.ts` — ChatOpenAI로 사양 추출 + 의도 파악 (1회 LLM 호출)
+  - `lib/ai/graph/nodes/evaluate-completeness.ts` — 필수 사양 충족 판단 (로직만, LLM 불필요)
+  - `lib/ai/graph/nodes/generate-reply.ts` — 응답 생성 + 가이드 질문 (1회 LLM 호출)
+  - `lib/ai/graph/quotation-chat-graph.ts` — StateGraph 조립 (start→extract→evaluate→reply→END)
+  - `lib/ai/graph/checkpointer.ts` — PostgreSQL 체크포인터 (thread_id별 대화 상태 자동 저장/복원)
+
+- 📋 **Task 085: LLM 호출 로거 + OpenAI 클라이언트 개선**
+  - `lib/ai/llm-logger.ts` — logLLMCall() 함수 (모든 호출을 DB에 자동 기록)
+  - 모델별 토큰 가격 상수 (gpt-4o: $2.5/1M input, $10/1M output 등)
+  - `lib/ai/openai-client.ts` 수정 — response.usage 반환 + logLLMCall 연동
+  - 기존 rfp-analyzer.ts, recommendation-explainer.ts에 토큰 추적 추가
+
+- 📋 **Task 086: 멀티턴 대화 API + 세션 관리 API**
+  - `app/api/quotation/chat/route.ts` — LangGraph 기반 멀티턴 대화 (POST: message, threadId, mode, customerId)
+  - `app/api/quotation/chat/sessions/route.ts` — 사용자 대화 세션 목록 (GET)
+  - `app/api/quotation/chat/[sessionId]/route.ts` — 세션 상세 조회/삭제 (GET/DELETE)
+  - `app/api/ai-usage/route.ts` — 테넌트별 AI 사용량 대시보드 데이터 (GET)
+  - 기존 `/api/chat-quotation` deprecated 처리
+
+- 📋 **Task 087: 대화형 UI 컴포넌트 + AI 사용량 대시보드**
+  - `components/chat/chat-input.tsx` — Textarea + Shift+Enter + 전송 버튼
+  - `components/chat/chat-message.tsx` — 메시지 버블 (user/assistant 분기, 아바타)
+  - `components/chat/chat-message-list.tsx` — ScrollArea + 자동스크롤 + 타이핑 인디케이터
+  - `components/chat/specs-sidebar.tsx` — 실시간 사양 요약 패널
+  - `components/chat/session-list.tsx` — 이전 대화 세션 목록/복원
+  - `components/chat/token-usage-badge.tsx` — 토큰 사용량 뱃지
+  - `app/(dashboard)/quotation/chat/page.tsx` 리팩터링 (309줄 단일파일 → 컴포넌트 조합)
+  - `app/(dashboard)/settings/ai-usage/page.tsx` — AI 사용량 대시보드 (토큰/비용/호출수 차트)
+
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- Task 080: ✅ 완료 (IT 인프라 코드 체계)
-- Task 081: ✅ 완료 (서버 파트 코드 체계)
 - Task 082: 🚀 진행 예정 (제품 관리 통합 2제품군)
-- 완료율: 58/61 = ~95%
+- Task 083: 📋 예정 (LangChain 패키지 + DB 스키마)
+- Task 084: 📋 예정 (LangGraph 대화 그래프)
+- Task 085: 📋 예정 (LLM 호출 로거 + 토큰 추적)
+- Task 086: 📋 예정 (멀티턴 대화 API + 세션 관리)
+- Task 087: 📋 예정 (대화형 UI + AI 사용량 대시보드)
+- 완료율: 58/66 = ~88%

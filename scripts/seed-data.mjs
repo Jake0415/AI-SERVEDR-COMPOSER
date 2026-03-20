@@ -233,9 +233,10 @@ async function main() {
 
   for (let i = 0; i < 3; i++) {
     await sql`INSERT INTO ai_server_composer.quotations
-      (id, tenant_id, customer_id, quotation_number, quotation_type, total_cost, total_supply, vat, total_amount, status, validity_date, created_by)
-      VALUES (${quotationIds[i]}, ${TENANT}, ${customerIds[i]}, ${"QT-2026-" + String(i+1).padStart(4,"0")}, ${types[i]}, ${Math.round(totals[i]*0.7)}, ${totals[i]}, ${Math.round(totals[i]*0.1)}, ${Math.round(totals[i]*1.1)}, ${statuses[i]}, ${validity}, ${USER})
-      ON CONFLICT (id) DO UPDATE SET
+      (id, tenant_id, customer_id, quotation_number, revision, quotation_type, total_cost, total_supply, vat, total_amount, status, validity_date, created_by)
+      VALUES (${quotationIds[i]}, ${TENANT}, ${customerIds[i]}, ${"QT-2026-" + String(i+1).padStart(4,"0")}, 1, ${types[i]}, ${Math.round(totals[i]*0.7)}, ${totals[i]}, ${Math.round(totals[i]*0.1)}, ${Math.round(totals[i]*1.1)}, ${statuses[i]}, ${validity}, ${USER})
+      ON CONFLICT (tenant_id, quotation_number, revision) DO UPDATE SET
+        id = EXCLUDED.id,
         quotation_type = EXCLUDED.quotation_type,
         total_cost = EXCLUDED.total_cost,
         total_supply = EXCLUDED.total_supply,
