@@ -111,14 +111,11 @@ export default function ServerPartsTab() {
   useEffect(() => {
     fetch("/api/part-codes").then(r => r.json()).then(d => {
       if (d.success && d.data) {
-        // flat → tree 변환
-        const allCodes = d.data as { id: string; code: string; name: string; level: number; parentId: string | null }[];
-        const level1 = allCodes.filter(c => c.level === 1);
-        const tree: CodeNode[] = level1.map(l1 => ({
-          ...l1,
-          children: allCodes.filter(c => c.parentId === l1.id).map(l2 => ({ ...l2, children: [] })),
-        }));
-        setCodeTree(tree);
+        // API 응답: { tree: CodeNode[], total: number }
+        const tree = d.data.tree as CodeNode[];
+        if (Array.isArray(tree)) {
+          setCodeTree(tree);
+        }
       }
     }).catch(() => {});
   }, []);
