@@ -676,10 +676,16 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - UI: 대분류→중분류 캐스케이드 필터, 통합 제품 추가 Dialog
   - 컴포넌트 분리: equipment-tab, server-parts-tab, product-add-dialog, price-history-dialog
 
-- 🚀 **Task 082-A: 제품 테이블 스펙 컬럼 → 모델명 호버 툴팁**
+- ✅ **Task 082-A: 제품 테이블 스펙 컬럼 → 모델명 호버 툴팁**
   - "주요 스펙" 컬럼 제거 → 테이블 가독성 개선
   - 모델명 호버 시 shadcn Tooltip으로 상세 스펙 표시
   - IT 인프라 장비 탭 + 서버 파트 탭 양쪽 동일 적용
+
+- 🚀 **Task 082-B: IT 인프라 장비 엑셀 템플릿 + 대량 업로드**
+  - 엑셀 템플릿 다운로드 API + 업로드 파싱 API
+  - 장비코드 → UUID 자동 매핑, 스펙 컬럼 → jsonb 변환
+  - equipment-tab에 엑셀 관리 DropdownMenu 추가
+  - RFP 기반 샘플 데이터 16행 포함
   - `components/ui/tooltip.tsx` 신규 설치
 
 ### Phase 10: LangChain.js + LangGraph.js 기반 AI 대화 시스템

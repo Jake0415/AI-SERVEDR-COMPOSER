@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -17,7 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Search, Pencil, Trash2, History, Loader2, Eye } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Search, Pencil, Trash2, History, Loader2, Eye, FileSpreadsheet } from "lucide-react";
 
 interface CodeNode {
   id: string; code: string; name: string; level: number; children: CodeNode[];
@@ -103,6 +106,9 @@ export default function EquipmentTab() {
   // 상세보기
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailTarget, setDetailTarget] = useState<EquipmentProduct | null>(null);
+
+  // 엑셀
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const limit = 20;
 
@@ -204,6 +210,37 @@ export default function EquipmentTab() {
     } catch {} finally { setHistoryLoading(false); }
   };
 
+  // 엑셀 다운로드
+  const downloadTemplate = async () => {
+    const res = await fetch("/api/equipment-products/excel-template");
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "equipment-template.xlsx"; a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  // 엑셀 업로드
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/equipment-products/excel-upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (json.success) {
+        alert(`${json.data?.inserted ?? 0}건 등록, ${json.data?.skipped ?? 0}건 건너뜀 완료`);
+        fetchProducts();
+      } else {
+        alert(json.error?.message ?? "업로드 실패");
+      }
+    } catch { alert("업로드 오류"); }
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
   // 추가 Dialog: 대분류 → 장비명(level 3) 직접 선택
   const addMajorNode = codeTree.find(n => n.code === addMajor);
   const addItemOptions = (addMajorNode?.children ?? []).flatMap(mid => mid.children ?? []);
@@ -214,13 +251,25 @@ export default function EquipmentTab() {
     <TooltipProvider>
     <div className="space-y-4">
       {/* 버튼 영역 */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
         {isAdmin && (
           <Button onClick={() => { setAddMajor(""); setAddItem(""); setAddModel(""); setAddMfr(""); setAddListPrice(0); setAddMarketPrice(0); setAddSupplyPrice(0); setAddOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" />
             장비 제품 추가
           </Button>
         )}
+        {isAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline"><FileSpreadsheet className="mr-2 h-4 w-4" />엑셀 관리</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={downloadTemplate}>템플릿 다운로드</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fileRef.current?.click()}>엑셀 업로드</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelUpload} />
       </div>
 
       {/* 대분류 필터 */}
