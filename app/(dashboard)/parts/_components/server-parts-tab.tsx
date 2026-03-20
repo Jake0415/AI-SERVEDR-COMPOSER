@@ -74,6 +74,15 @@ interface PartItem {
   categoryName: string | null;
   categoryDisplayName: string | null;
   categoryGroup: string | null;
+  partCodeId: string | null;
+  partCodeCode: string | null;
+  partCodeName: string | null;
+}
+
+interface PartCodeLevel1 {
+  id: string;
+  code: string;
+  name: string;
 }
 
 interface PartFormValues {
@@ -213,20 +222,26 @@ export default function ServerPartsTab() {
     fetchUser();
   }, []);
 
-  // --- 카테고리 목록 가져오기 ---
+  // 파트 코드 Level 1 목록
+  const [partCodeTabs, setPartCodeTabs] = useState<PartCodeLevel1[]>([]);
+
+  // --- 파트 코드 Level 1 목록 가져오기 ---
   useEffect(() => {
-    async function fetchCategories() {
+    async function fetchPartCodes() {
       try {
-        const res = await fetch("/api/parts?limit=1");
+        const res = await fetch("/api/part-codes");
         if (res.ok) {
-          // 카테고리 목록을 별도로 가져올 수 없으므로 기본 매핑 사용
-          // 실제로는 DB 카테고리를 기반으로 하지만, 탭 표시를 위해 기본값 유지
+          const json = await res.json();
+          if (json.success && json.data) {
+            const level1 = json.data.filter((c: { level: number }) => c.level === 1);
+            setPartCodeTabs(level1);
+          }
         }
       } catch {
         // 무시
       }
     }
-    fetchCategories();
+    fetchPartCodes();
   }, []);
 
   // --- 부품 목록 가져오기 ---
@@ -234,8 +249,9 @@ export default function ServerPartsTab() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      // 파트 코드 기준 필터: category_id 대신 part_code 사용
       if (selectedCategoryId && selectedCategoryId !== "all") {
-        params.set("category_id", selectedCategoryId);
+        params.set("part_code", selectedCategoryId);
       }
       if (search) {
         params.set("search", search);
@@ -474,14 +490,7 @@ export default function ServerPartsTab() {
     }
   };
 
-  // --- 카테고리 탭 목록 구성 ---
-  // DB에서 가져온 카테고리와 기본 카테고리를 합침
-  const tabCategories = categories.length > 0
-    ? categories
-    : DEFAULT_CATEGORIES.map((c) => ({ id: c.name, ...c }));
-
-  const serverParts = tabCategories.filter((c) => c.group === "server_parts");
-  const networkParts = tabCategories.filter((c) => c.group === "network_infra");
+  // --- 파트 코드 기준 탭 목록 ---
 
   const totalPages = Math.ceil(total / limit);
 
@@ -534,7 +543,7 @@ export default function ServerPartsTab() {
         </Button>
       </form>
 
-      {/* 카테고리 탭 */}
+      {/* 파트 코드 기준 탭 */}
       <Tabs
         value={selectedCategoryId}
         onValueChange={handleCategoryChange}
@@ -542,26 +551,11 @@ export default function ServerPartsTab() {
       >
         <TabsList className="flex flex-wrap h-auto gap-1">
           <TabsTrigger value="all">전체</TabsTrigger>
-          {serverParts.length > 0 && (
-            <>
-              <span className="mx-1 self-center text-xs text-muted-foreground">|</span>
-              {serverParts.map((cat) => (
-                <TabsTrigger key={cat.id} value={cat.id}>
-                  {cat.displayName}
-                </TabsTrigger>
-              ))}
-            </>
-          )}
-          {networkParts.length > 0 && (
-            <>
-              <span className="mx-1 self-center text-xs text-muted-foreground">|</span>
-              {networkParts.map((cat) => (
-                <TabsTrigger key={cat.id} value={cat.id}>
-                  {cat.displayName}
-                </TabsTrigger>
-              ))}
-            </>
-          )}
+          {partCodeTabs.map((pc) => (
+            <TabsTrigger key={pc.code} value={pc.code}>
+              {pc.name}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value={selectedCategoryId} className="mt-4">
@@ -611,7 +605,7 @@ export default function ServerPartsTab() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {item.categoryDisplayName ?? item.categoryName ?? "-"}
+                          {item.partCodeCode ?? item.categoryDisplayName ?? item.categoryName ?? "-"}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
@@ -727,11 +721,17 @@ export default function ServerPartsTab() {
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="">카테고리 선택</option>
-                  {tabCategories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.displayName}
-                    </option>
-                  ))}
+                  {categories.length > 0
+                    ? categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.displayName}
+                        </option>
+                      ))
+                    : DEFAULT_CATEGORIES.map((cat) => (
+                        <option key={cat.name} value={cat.name}>
+                          {cat.displayName}
+                        </option>
+                      ))}
                 </select>
               </div>
             )}

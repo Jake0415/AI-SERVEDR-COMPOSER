@@ -58,6 +58,7 @@ export const partsRelations = relations(parts, ({ one }) => ({
   tenant: one(tenants, { fields: [parts.tenantId], references: [tenants.id] }),
   category: one(partCategories, { fields: [parts.categoryId], references: [partCategories.id] }),
   price: one(partPrices, { fields: [parts.id], references: [partPrices.partId] }),
+  partCode: one(partCodes, { fields: [parts.partCodeId], references: [partCodes.id] }),
 }));
 
 // --- 부품 가격 관계 ---
@@ -118,6 +119,7 @@ export const partCodesRelations = relations(partCodes, ({ one, many }) => ({
   tenant: one(tenants, { fields: [partCodes.tenantId], references: [tenants.id] }),
   parent: one(partCodes, { fields: [partCodes.parentId], references: [partCodes.id], relationName: "partCodeParentChild" }),
   children: many(partCodes, { relationName: "partCodeParentChild" }),
+  parts: many(parts),
 }));
 
 // --- IT 인프라 장비 제품 관계 ---

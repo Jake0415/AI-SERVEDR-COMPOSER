@@ -130,7 +130,7 @@ export const parts = schema.table("parts", {
   modelName: text("model_name").notNull(),
   manufacturer: text("manufacturer").notNull(),
   specs: jsonb("specs").notNull().default({}),
-  partCodeId: uuid("part_code_id"),
+  partCodeId: uuid("part_code_id").references(() => partCodes.id),
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

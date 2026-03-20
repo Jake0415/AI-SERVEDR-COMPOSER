@@ -3,7 +3,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { db, parts, partPrices, partCategories } from "@/lib/db";
+import { db, parts, partPrices, partCategories, partCodes } from "@/lib/db";
 import { eq, and, like, sql, or } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/actions";
 import type { ApiResponse } from "@/lib/types";
@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = request.nextUrl;
     const categoryId = searchParams.get("category_id");
+    const partCodeFilter = searchParams.get("part_code");
     const search = searchParams.get("search")?.trim();
     const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
     const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? "20")));
@@ -36,6 +37,11 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(parts.categoryId, categoryId));
     }
 
+    // 파트 코드 기준 필터 (Level 1 code, 예: "CP", "MM")
+    if (partCodeFilter) {
+      conditions.push(like(partCodes.code, `${partCodeFilter}%`));
+    }
+
     if (search) {
       conditions.push(
         or(
@@ -48,10 +54,13 @@ export async function GET(request: NextRequest) {
     const whereClause = and(...conditions);
 
     // 전체 건수 조회
-    const [countResult] = await db
+    const countQuery = db
       .select({ count: sql<number>`count(*)::int` })
-      .from(parts)
-      .where(whereClause);
+      .from(parts);
+    if (partCodeFilter) {
+      countQuery.leftJoin(partCodes, eq(partCodes.id, parts.partCodeId));
+    }
+    const [countResult] = await countQuery.where(whereClause);
 
     const total = countResult?.count ?? 0;
 
@@ -75,10 +84,15 @@ export async function GET(request: NextRequest) {
         categoryName: partCategories.name,
         categoryDisplayName: partCategories.displayName,
         categoryGroup: partCategories.group,
+        // 파트 코드 정보
+        partCodeId: parts.partCodeId,
+        partCodeCode: partCodes.code,
+        partCodeName: partCodes.name,
       })
       .from(parts)
       .leftJoin(partPrices, eq(partPrices.partId, parts.id))
       .leftJoin(partCategories, eq(partCategories.id, parts.categoryId))
+      .leftJoin(partCodes, eq(partCodes.id, parts.partCodeId))
       .where(whereClause)
       .orderBy(parts.createdAt)
       .limit(limit)
