@@ -17,6 +17,11 @@ import {
   quotationItems,
   bidResults,
   notifications,
+  equipmentCodes,
+  partCodes,
+  equipmentProducts,
+  equipmentProductPrices,
+  equipmentPriceHistory,
 } from "./schema";
 
 // --- 테넌트 관계 ---
@@ -99,4 +104,34 @@ export const bidResultsRelations = relations(bidResults, ({ one }) => ({
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   tenant: one(tenants, { fields: [notifications.tenantId], references: [tenants.id] }),
   user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
+
+// --- 장비 코드 관계 (self-referencing) ---
+export const equipmentCodesRelations = relations(equipmentCodes, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [equipmentCodes.tenantId], references: [tenants.id] }),
+  parent: one(equipmentCodes, { fields: [equipmentCodes.parentId], references: [equipmentCodes.id], relationName: "parentChild" }),
+  children: many(equipmentCodes, { relationName: "parentChild" }),
+}));
+
+// --- 서버 파트 코드 관계 (self-referencing) ---
+export const partCodesRelations = relations(partCodes, ({ one, many }) => ({
+  tenant: one(tenants, { fields: [partCodes.tenantId], references: [tenants.id] }),
+  parent: one(partCodes, { fields: [partCodes.parentId], references: [partCodes.id], relationName: "partCodeParentChild" }),
+  children: many(partCodes, { relationName: "partCodeParentChild" }),
+}));
+
+// --- IT 인프라 장비 제품 관계 ---
+export const equipmentProductsRelations = relations(equipmentProducts, ({ one }) => ({
+  tenant: one(tenants, { fields: [equipmentProducts.tenantId], references: [tenants.id] }),
+  equipmentCode: one(equipmentCodes, { fields: [equipmentProducts.equipmentCodeId], references: [equipmentCodes.id] }),
+}));
+
+export const equipmentProductPricesRelations = relations(equipmentProductPrices, ({ one }) => ({
+  product: one(equipmentProducts, { fields: [equipmentProductPrices.productId], references: [equipmentProducts.id] }),
+}));
+
+export const equipmentPriceHistoryRelations = relations(equipmentPriceHistory, ({ one }) => ({
+  product: one(equipmentProducts, { fields: [equipmentPriceHistory.productId], references: [equipmentProducts.id] }),
+  tenant: one(tenants, { fields: [equipmentPriceHistory.tenantId], references: [tenants.id] }),
+  changedByUser: one(users, { fields: [equipmentPriceHistory.changedBy], references: [users.id] }),
 }));

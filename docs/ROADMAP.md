@@ -236,6 +236,29 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - 역할 기반 접근 제어 적용 (관리자 이상: CRUD, 멤버: 조회만)
   - API 통합 테스트
 
+- ✅ **Task 015-1: 엑셀 일괄 업로드 API 구현 (F001 확장)**
+  - 엑셀 템플릿 동적 생성 API (카테고리 드롭다운 포함)
+  - 엑셀 파싱/검증/일괄 등록 API (중복 처리: skip/overwrite)
+  - 업로드 시 가격 이력 자동 기록 (change_type: 'excel_upload')
+  - 업로드 로그 및 오류 행 다운로드 API
+
+- ✅ **Task 015-2: 가격 변동 이력 관리 API 구현 (F002 확장)**
+  - 가격 수정 시 part_price_history 자동 INSERT
+  - 부품별 가격 이력 조회 API (기간 필터)
+  - 카테고리별 가격 추이 집계 API
+
+- ✅ **Task 015-3: 자동 스냅샷 및 스케줄러 구현 (F002 확장)**
+  - Vercel Cron Job 기반 일일 가격 스냅샷
+  - 스냅샷 설정 관리 API (시간, 보관기간)
+  - 수동 스냅샷 트리거
+
+- ✅ **Task 015-4: 부품 엑셀 업로드 UI 및 가격 이력 UI 연동 (F001, F002)**
+  - 부품 관리 페이지에 "엑셀 관리" 드롭다운 메뉴 추가 (템플릿 다운로드 / 엑셀 업로드)
+  - 엑셀 업로드 Dialog: 드래그앤드롭 파일 선택, 중복 처리 옵션(덮어쓰기/건너뛰기)
+  - 업로드 결과(성공/실패/오류 상세) 표시 UI
+  - 부품별 가격 변동 이력 조회 Dialog 추가 (관리 컬럼 이력 버튼)
+  - 기존 015-1/2/3 백엔드 API와 프론트엔드 완전 연동
+
 - ✅ **Task 016: RFP 업로드 및 AI 파싱 구현 (F003, F004)**
   - RFP 파일 업로드 API 구현
     - Supabase Storage 활용 파일 저장
@@ -627,8 +650,37 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - 기존 AI 모듈 3개 리팩터링: DB 프롬프트 우선, 폴백 상수 지원
   - 시드 데이터: 3개 시스템 프롬프트 (rfp-analyzer, chat-quotation, recommendation)
 
+### Phase 9: IT 인프라 코드 체계 구축
+
+- ✅ **Task 080: IT 인프라 코드 관리 시스템 (F048)**
+  - DB: `equipment_codes` 테이블 (3단계 계층, self-referencing)
+  - 코드 자동생성 규칙: 대분류(AA 영문2), 중분류(AA-NN 영문2+숫자2), 장비명(AA-NN-NNN 영문2+숫자2+숫자3)
+  - 코드 생성 유틸: `lib/utils/code-generator.ts` (DB 중복 체크 후 발급)
+  - API: `/api/equipment-codes` GET(트리)/POST, `/api/equipment-codes/[id]` PUT/DELETE
+  - 시드: `test-document/IT_Infra_Code.xlsx` 기반 대분류 11 + 중분류 48 + 장비명 101개 코드 투입
+  - UI: `/settings/codes` 트리뷰 관리 페이지 (추가/수정/삭제, 엑셀 import)
+  - 부품 연동: `parts` 테이블에 `equipment_code_id` 필드 추가 (선택적)
+
+- ✅ **Task 081: 서버 파트 코드 관리 시스템 (F049)**
+  - DB: `part_codes` 테이블 (2단계 계층, self-referencing)
+  - 코드 자동생성: 카테고리(AA), 부품명(AA-NNN)
+  - API: `/api/part-codes` CRUD (트리 조회, 추가, 수정, 삭제)
+  - 시드: Server_Part.xlsx 기반 카테고리 11 + 부품명 20 = 31개 코드 투입
+  - UI: `/settings/part-codes` 트리뷰 관리 페이지
+
+- 🚀 **Task 082: 제품 관리 통합 — 2제품군 분리 UI + IT 인프라 장비 CRUD (F050)**
+  - DB: `equipment_products`, `equipment_product_prices`, `equipment_price_history` 테이블 신설
+  - DB: `parts` 테이블에 `part_code_id` nullable FK 추가
+  - API: `/api/equipment-products` CRUD + 가격 이력
+  - UI: 부품 관리 페이지 → 2탭 구조 리팩토링 (IT 인프라 장비 / 서버 파트)
+  - UI: 대분류→중분류 캐스케이드 필터, 통합 제품 추가 Dialog
+  - 컴포넌트 분리: equipment-tab, server-parts-tab, product-add-dialog, price-history-dialog
+
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- 완료율: 56/58 = ~97% (070-B, 070-C 부분 구현)
+- Task 080: ✅ 완료 (IT 인프라 코드 체계)
+- Task 081: ✅ 완료 (서버 파트 코드 체계)
+- Task 082: 🚀 진행 예정 (제품 관리 통합 2제품군)
+- 완료율: 58/61 = ~95%

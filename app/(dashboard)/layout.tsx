@@ -124,7 +124,7 @@ export default async function DashboardLayout({
         </header>
 
         {/* 메인 콘텐츠 */}
-        <main className="flex-1 p-4 md:p-8">{children}</main>
+        <main className="flex-1 p-4 md:p-8 bg-background overflow-auto">{children}</main>
       </div>
     </div>
   );

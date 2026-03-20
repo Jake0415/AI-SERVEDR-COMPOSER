@@ -1,6 +1,6 @@
 // ============================================================
 // Drizzle ORM 스키마 정의 — ai_server_composer 전용 스키마
-// 20개 테이블 + 인덱스 + CHECK 제약
+// 25개 테이블 + 인덱스 + CHECK 제약
 // ============================================================
 
 import {
@@ -130,6 +130,7 @@ export const parts = schema.table("parts", {
   modelName: text("model_name").notNull(),
   manufacturer: text("manufacturer").notNull(),
   specs: jsonb("specs").notNull().default({}),
+  partCodeId: uuid("part_code_id"),
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -381,4 +382,85 @@ export const aiPrompts = schema.table("ai_prompts", {
 }, (table) => [
   uniqueIndex("idx_ai_prompts_slug_tenant").on(table.tenantId, table.slug),
   index("idx_ai_prompts_category").on(table.category),
+]);
+
+// --- IT 인프라 장비 코드 (21) ---
+export const equipmentCodes = schema.table("equipment_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  level: integer("level").notNull(),
+  parentId: uuid("parent_id"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_equipment_codes_tenant_code").on(table.tenantId, table.code),
+  index("idx_equipment_codes_parent").on(table.parentId),
+  index("idx_equipment_codes_level").on(table.tenantId, table.level),
+]);
+
+// --- 서버 파트 코드 (22) ---
+export const partCodes = schema.table("part_codes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  level: integer("level").notNull(),
+  parentId: uuid("parent_id"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_part_codes_tenant_code").on(table.tenantId, table.code),
+  index("idx_part_codes_parent").on(table.parentId),
+  index("idx_part_codes_level").on(table.tenantId, table.level),
+]);
+
+// --- IT 인프라 장비 제품 (23) ---
+export const equipmentProducts = schema.table("equipment_products", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  equipmentCodeId: uuid("equipment_code_id").notNull().references(() => equipmentCodes.id),
+  modelName: text("model_name").notNull(),
+  manufacturer: text("manufacturer").notNull(),
+  specs: jsonb("specs").notNull().default({}),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_equipment_products_tenant").on(table.tenantId),
+  index("idx_equipment_products_code").on(table.equipmentCodeId),
+]);
+
+// --- IT 인프라 장비 가격 (24) ---
+export const equipmentProductPrices = schema.table("equipment_product_prices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: uuid("product_id").notNull().references(() => equipmentProducts.id, { onDelete: "cascade" }),
+  listPrice: bigint("list_price", { mode: "number" }).notNull().default(0),
+  marketPrice: bigint("market_price", { mode: "number" }).notNull().default(0),
+  supplyPrice: bigint("supply_price", { mode: "number" }).notNull().default(0),
+}, (table) => [
+  uniqueIndex("idx_equipment_product_prices_product").on(table.productId),
+]);
+
+// --- IT 인프라 장비 가격 변동 이력 (25) ---
+export const equipmentPriceHistory = schema.table("equipment_price_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  productId: uuid("product_id").notNull().references(() => equipmentProducts.id),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  changeType: text("change_type").notNull(),
+  listPriceBefore: bigint("list_price_before", { mode: "number" }).notNull().default(0),
+  listPriceAfter: bigint("list_price_after", { mode: "number" }).notNull().default(0),
+  marketPriceBefore: bigint("market_price_before", { mode: "number" }).notNull().default(0),
+  marketPriceAfter: bigint("market_price_after", { mode: "number" }).notNull().default(0),
+  supplyPriceBefore: bigint("supply_price_before", { mode: "number" }).notNull().default(0),
+  supplyPriceAfter: bigint("supply_price_after", { mode: "number" }).notNull().default(0),
+  changedBy: uuid("changed_by").references(() => users.id),
+  changeReason: text("change_reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_equipment_price_history_product").on(table.productId),
+  index("idx_equipment_price_history_tenant").on(table.tenantId),
 ]);

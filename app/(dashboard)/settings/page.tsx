@@ -3,7 +3,7 @@
 // ============================================================
 
 import Link from "next/link";
-import { FolderTree, Building2, Bell, Palette, KeyRound, BrainCircuit } from "lucide-react";
+import { FolderTree, Building2, Bell, Palette, KeyRound, BrainCircuit, Network, Cpu } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -12,6 +12,18 @@ import {
 } from "@/components/ui/card";
 
 const settingsMenu = [
+  {
+    href: "/settings/codes",
+    title: "IT 인프라 코드 관리",
+    description: "대분류→중분류→장비명 3단계 계층 코드 체계 관리",
+    icon: Network,
+  },
+  {
+    href: "/settings/part-codes",
+    title: "서버 파트 코드 관리",
+    description: "카테고리→부품명 2단계 서버 확장 부품 코드 체계 관리",
+    icon: Cpu,
+  },
   {
     href: "/settings/categories",
     title: "카테고리 관리",
