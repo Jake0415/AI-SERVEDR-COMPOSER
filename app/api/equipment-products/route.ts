@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
   ];
   if (codeFilter.length > 0) {
     conditions.push(sql`${equipmentProducts.equipmentCodeId} = ANY(${codeFilter})`);
+  } else if (majorCode || minorCode) {
+    // 해당 카테고리에 코드가 없으면 결과 0건
+    conditions.push(sql`1 = 0`);
   }
   if (search) {
     conditions.push(or(
