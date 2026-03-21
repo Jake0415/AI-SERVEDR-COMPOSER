@@ -3,7 +3,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/actions";
 import { db, rfpDocuments, quotations } from "@/lib/db";
 
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
           count: sql<number>`count(*)`,
         })
         .from(quotations)
-        .where(sql`${quotations.rfpId} = ANY(${rfpIds})`)
+        .where(inArray(quotations.rfpId, rfpIds))
         .groupBy(quotations.rfpId);
 
       for (const row of countRows) {
