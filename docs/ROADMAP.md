@@ -766,16 +766,16 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
 
 > RFP 업로드를 견적 생성 허브로 통합, RFP-거래처 연결
 
-- ⏳ **Task 091: RFP-거래처 연결 DB 스키마**
+- ✅ **Task 091: RFP-거래처 연결 DB 스키마**
   - rfp_documents에 customer_id 컬럼 추가
   - RFP 조회 API에 customer_id 필터링
   - RFP 업로드 API에 customer_id 저장
 
-- ⏳ **Task 092: 사이드바 메뉴 재구성**
+- ✅ **Task 092: 사이드바 메뉴 재구성**
   - RFP 업로드 독립 메뉴 제거
   - 견적 생성 허브에서 RFP 업로드 시작
 
-- ⏳ **Task 093: RFP 페이지 이동**
+- ✅ **Task 093: RFP 페이지 이동**
   - /rfp → /quotation/rfp 라우트 이동
   - 거래처별 RFP 이력 필터링
 
@@ -783,7 +783,4 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- Task 091: ⏳ RFP-거래처 연결 DB 스키마
-- Task 092: ⏳ 사이드바 메뉴 재구성
-- Task 093: ⏳ RFP 페이지 이동
-- 완료율: 76/81 = ~94% (미완료 5건: Phase 7 위저드 2건 + Phase 12 RFP-견적 통합 3건)
+- 완료율: 79/81 = ~98% (미완료 2건: Phase 7 위저드 070-B/070-C)
