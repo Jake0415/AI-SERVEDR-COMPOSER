@@ -221,6 +221,19 @@ async function main() {
   for (let i = 0; i < customerData.length; i++) {
     const [cn,bn,ceo,addr,bt,bi,ct] = customerData[i];
     // 먼저 company_name 기준으로 중복 제거 (랜덤 UUID로 생성된 이전 데이터)
+    // 1) 기존 랜덤 UUID를 참조하는 quotations의 customer_id를 고정 ID로 업데이트
+    await sql`UPDATE ai_server_composer.quotations SET customer_id = ${customerIds[i]}
+      WHERE customer_id IN (
+        SELECT id FROM ai_server_composer.customers
+        WHERE tenant_id = ${TENANT} AND company_name = ${cn} AND id != ${customerIds[i]}
+      )`;
+    // 2) rfp_documents의 customer_id도 업데이트
+    await sql`UPDATE ai_server_composer.rfp_documents SET customer_id = ${customerIds[i]}
+      WHERE customer_id IN (
+        SELECT id FROM ai_server_composer.customers
+        WHERE tenant_id = ${TENANT} AND company_name = ${cn} AND id != ${customerIds[i]}
+      )`;
+    // 3) 중복 거래처 삭제
     await sql`DELETE FROM ai_server_composer.customers
       WHERE tenant_id = ${TENANT} AND company_name = ${cn} AND id != ${customerIds[i]}`;
     await sql`INSERT INTO ai_server_composer.customers (id, tenant_id, company_name, business_number, ceo_name, address, business_type, business_item, customer_type)
