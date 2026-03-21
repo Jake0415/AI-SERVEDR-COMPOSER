@@ -218,6 +218,7 @@ export const rfpDocuments = schema.table("rfp_documents", {
   id: uuid("id").primaryKey().defaultRandom(),
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
   uploadedBy: uuid("uploaded_by").notNull().references(() => users.id),
+  customerId: uuid("customer_id").references(() => customers.id),
   fileName: text("file_name").notNull(),
   fileUrl: text("file_url").notNull(),
   status: text("status").notNull().default("uploaded"),

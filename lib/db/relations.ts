@@ -77,6 +77,7 @@ export const partPriceHistoryRelations = relations(partPriceHistory, ({ one }) =
 export const rfpDocumentsRelations = relations(rfpDocuments, ({ one, many }) => ({
   tenant: one(tenants, { fields: [rfpDocuments.tenantId], references: [tenants.id] }),
   uploadedByUser: one(users, { fields: [rfpDocuments.uploadedBy], references: [users.id] }),
+  customer: one(customers, { fields: [rfpDocuments.customerId], references: [customers.id] }),
   quotations: many(quotations),
 }));
 

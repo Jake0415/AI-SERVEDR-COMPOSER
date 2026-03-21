@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const customerId = formData.get("customer_id") as string | null;
 
     if (!file) {
       return NextResponse.json(
@@ -70,6 +71,7 @@ export async function POST(request: NextRequest) {
       .values({
         tenantId: user.tenantId,
         uploadedBy: user.id,
+        customerId: customerId || undefined,
         fileName: file.name,
         fileUrl: filePath,
         status: "parsing",

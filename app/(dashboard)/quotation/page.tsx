@@ -16,7 +16,7 @@ const CUSTOMER_TYPE_LABEL: Record<string, string> = {
 
 const scenarios = [
   {
-    basePath: "/rfp",
+    basePath: "/quotation/rfp",
     icon: FileText,
     title: "RFP 기반 견적",
     description: "RFP 문서(PDF/HWP/DOCX)를 업로드하면 AI가 요구사항을 분석하여 3가지 견적안을 자동 생성합니다.",

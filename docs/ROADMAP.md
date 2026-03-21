@@ -762,8 +762,28 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - 엑셀 템플릿 다운로드 파일명 통일
   - 정적 파일 서빙 방식으로 템플릿 제공
 
+### Phase 12: RFP-견적 통합
+
+> RFP 업로드를 견적 생성 허브로 통합, RFP-거래처 연결
+
+- ⏳ **Task 091: RFP-거래처 연결 DB 스키마**
+  - rfp_documents에 customer_id 컬럼 추가
+  - RFP 조회 API에 customer_id 필터링
+  - RFP 업로드 API에 customer_id 저장
+
+- ⏳ **Task 092: 사이드바 메뉴 재구성**
+  - RFP 업로드 독립 메뉴 제거
+  - 견적 생성 허브에서 RFP 업로드 시작
+
+- ⏳ **Task 093: RFP 페이지 이동**
+  - /rfp → /quotation/rfp 라우트 이동
+  - 거래처별 RFP 이력 필터링
+
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- 완료율: 76/78 = ~97% (미완료 2건은 Phase 7 서버 구성 위저드 관련)
+- Task 091: ⏳ RFP-거래처 연결 DB 스키마
+- Task 092: ⏳ 사이드바 메뉴 재구성
+- Task 093: ⏳ RFP 페이지 이동
+- 완료율: 76/81 = ~94% (미완료 5건: Phase 7 위저드 2건 + Phase 12 RFP-견적 통합 3건)
