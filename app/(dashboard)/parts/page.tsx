@@ -17,7 +17,7 @@ export default function ProductsPage() {
     <div className="space-y-6">
       {/* 페이지 헤더 */}
       <div>
-        <h2 className="text-2xl font-bold">제품 관리</h2>
+        <h2 className="text-2xl font-bold">판매 장비 관리</h2>
         <p className="text-muted-foreground">
           IT 인프라 장비 및 서버 확장 부품 통합 관리
         </p>

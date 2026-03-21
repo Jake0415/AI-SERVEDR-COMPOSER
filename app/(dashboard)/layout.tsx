@@ -24,7 +24,7 @@ import {
 
 const menuItems = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard, roles: ["super_admin", "admin", "member"] },
-  { href: "/parts", label: "부품 관리", icon: Wrench, roles: ["super_admin", "admin"] },
+  { href: "/parts", label: "판매 장비 관리", icon: Wrench, roles: ["super_admin", "admin"] },
   { href: "/rfp", label: "RFP 업로드", icon: FileText, roles: ["super_admin", "admin", "member"] },
   { href: "/quotation", label: "견적 생성", icon: Calculator, roles: ["super_admin", "admin", "member"] },
   { href: "/quotation-history", label: "견적 이력", icon: ClipboardList, roles: ["super_admin", "admin", "member"] },

@@ -215,7 +215,7 @@ export default async function DashboardPage() {
         <Button variant="outline" asChild>
           <Link href="/parts">
             <Package className="h-4 w-4 mr-2" />
-            부품 관리
+            판매 장비 관리
           </Link>
         </Button>
       </div>
