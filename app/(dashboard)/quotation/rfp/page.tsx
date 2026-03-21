@@ -182,7 +182,7 @@ export default function RfpPage() {
                 <p className="text-xs text-muted-foreground">
                   PDF 형식 지원 (최대 50MB)
                 </p>
-                <Button variant="outline" size="sm" type="button" onClick={(e) => e.stopPropagation()}>
+                <Button variant="outline" size="sm" type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
                   파일 선택
                 </Button>
               </div>
