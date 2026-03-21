@@ -417,7 +417,7 @@
 
 ---
 
-## 데이터 모델
+## 데이터 모델 (28개 테이블)
 
 ### tenants (테넌트/회사 정보 — 견적서 발행사 정보 포함)
 | 필드 | 설명 | 타입/관계 |
@@ -714,6 +714,174 @@
 | change_reason | 변경사유 | TEXT, NULLABLE |
 | sort_order | 정렬 순서 | INTEGER |
 
+### audit_logs (감사 로그)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 테넌트 | -> tenants.id (CASCADE DELETE) |
+| user_id | 수행한 사용자 | -> users.id |
+| action_type | 행위 유형 (login/create/update/delete 등) | TEXT |
+| resource_type | 대상 리소스 유형 (user/part/quotation 등) | TEXT |
+| resource_id | 대상 리소스 ID | UUID, NULLABLE |
+| changes | 변경 내용 (before/after) | JSONB, NULLABLE |
+| ip_address | IP 주소 | INET, NULLABLE |
+| created_at | 생성일시 | TIMESTAMPTZ |
+
+### notifications (알림)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 테넌트 | -> tenants.id (CASCADE DELETE) |
+| user_id | 대상 사용자 | -> users.id |
+| type | 알림 유형 | TEXT |
+| title | 알림 제목 | TEXT |
+| message | 알림 내용 | TEXT |
+| is_read | 읽음 여부 | BOOLEAN (default: false) |
+| related_resource_type | 관련 리소스 유형 | TEXT, NULLABLE |
+| related_resource_id | 관련 리소스 ID | UUID, NULLABLE |
+| created_at | 생성일시 | TIMESTAMPTZ |
+
+### ai_prompts (AI 프롬프트 관리)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 테넌트 | -> tenants.id (CASCADE DELETE) |
+| slug | 프롬프트 키 (유니크) | TEXT |
+| name | 프롬프트 이름 | TEXT |
+| description | 설명 | TEXT, NULLABLE |
+| category | 카테고리 (rfp/quotation/recommendation 등) | TEXT |
+| system_prompt | 시스템 프롬프트 본문 | TEXT |
+| output_schema | 출력 스키마 | TEXT, NULLABLE |
+| model_name | 사용 모델명 | TEXT, NULLABLE |
+| temperature | 온도 설정 | NUMERIC, NULLABLE |
+| max_tokens | 최대 토큰 수 | INTEGER, NULLABLE |
+| is_active | 활성 여부 | BOOLEAN (default: true) |
+| is_system | 시스템 기본 여부 | BOOLEAN (default: false) |
+| version | 버전 번호 | INTEGER (default: 1) |
+| created_by | 작성자 | -> users.id, NULLABLE |
+| created_at | 생성일시 | TIMESTAMPTZ |
+| updated_at | 수정일시 | TIMESTAMPTZ |
+
+### equipment_codes (IT 인프라 장비 코드)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 테넌트 | -> tenants.id (CASCADE DELETE) |
+| code | 코드 (대분류: AA, 중분류: AA-NN, 장비명: AA-NN-NNN) | TEXT, UNIQUE(tenant_id, code) |
+| name | 코드명 | TEXT |
+| level | 계층 (1: 대분류, 2: 중분류, 3: 장비명) | INTEGER |
+| parent_id | 상위 코드 | UUID, NULLABLE (self-referencing) |
+| sort_order | 정렬 순서 | INTEGER |
+| is_active | 활성 여부 | BOOLEAN (default: true) |
+| created_at | 생성일시 | TIMESTAMPTZ |
+
+### part_codes (서버 파트 코드)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 테넌트 | -> tenants.id (CASCADE DELETE) |
+| code | 코드 (카테고리: AA, 부품명: AA-NNN) | TEXT, UNIQUE(tenant_id, code) |
+| name | 코드명 | TEXT |
+| level | 계층 (1: 카테고리, 2: 부품명) | INTEGER |
+| parent_id | 상위 코드 | UUID, NULLABLE (self-referencing) |
+| sort_order | 정렬 순서 | INTEGER |
+| is_active | 활성 여부 | BOOLEAN (default: true) |
+| created_at | 생성일시 | TIMESTAMPTZ |
+
+### equipment_products (IT 인프라 장비 제품)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 테넌트 | -> tenants.id (CASCADE DELETE) |
+| equipment_code_id | 장비 코드 | -> equipment_codes.id |
+| model_name | 모델명 | TEXT |
+| manufacturer | 제조사 | TEXT |
+| specs | 상세 스펙 | JSONB |
+| is_deleted | 소프트 삭제 여부 | BOOLEAN (default: false) |
+| deleted_at | 삭제일시 | TIMESTAMPTZ, NULLABLE |
+| created_at | 생성일시 | TIMESTAMPTZ |
+
+### equipment_product_prices (IT 인프라 장비 가격)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| product_id | 장비 제품 | -> equipment_products.id (CASCADE DELETE), UNIQUE |
+| list_price | 리스트가 | BIGINT |
+| market_price | 시장가 | BIGINT |
+| supply_price | 공급가 | BIGINT |
+
+### equipment_price_history (IT 인프라 장비 가격 변동 이력)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| product_id | 장비 제품 | -> equipment_products.id |
+| tenant_id | 테넌트 | -> tenants.id |
+| change_type | 변경 유형 (manual/excel_upload 등) | TEXT |
+| list_price_before / after | 리스트가 변경 전/후 | BIGINT |
+| market_price_before / after | 시장가 변경 전/후 | BIGINT |
+| supply_price_before / after | 공급가 변경 전/후 | BIGINT |
+| changed_by | 변경자 | -> users.id, NULLABLE |
+| change_reason | 변경 사유 | TEXT, NULLABLE |
+| created_at | 생성일시 | TIMESTAMPTZ |
+
+### ai_chat_sessions (AI 대화 세션)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 테넌트 | -> tenants.id (CASCADE DELETE) |
+| user_id | 사용자 | -> users.id |
+| customer_id | 거래처 | -> customers.id, NULLABLE |
+| thread_id | LangGraph 스레드 ID | TEXT, UNIQUE |
+| mode | 대화 모드 (free/guide) | TEXT (default: free) |
+| status | 상태 (active/completed/cancelled) | TEXT (default: active) |
+| final_specs | 최종 결정된 서버 사양 | JSONB, NULLABLE |
+| quotation_id | 생성된 견적 ID | UUID, NULLABLE |
+| message_count | 메시지 수 | INTEGER (default: 0) |
+| created_at | 생성일시 | TIMESTAMPTZ |
+| updated_at | 수정일시 | TIMESTAMPTZ |
+
+### ai_chat_messages (AI 대화 메시지)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| session_id | 대화 세션 | -> ai_chat_sessions.id (CASCADE DELETE) |
+| role | 역할 (user/assistant/system) | TEXT |
+| content | 메시지 내용 | TEXT |
+| specs | 추출된 사양 스냅샷 | JSONB, NULLABLE |
+| token_count | 토큰 수 | INTEGER, NULLABLE |
+| created_at | 생성일시 | TIMESTAMPTZ |
+
+### llm_api_calls (LLM API 호출 로그)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | UUID |
+| tenant_id | 테넌트 | -> tenants.id (CASCADE DELETE) |
+| user_id | 사용자 | -> users.id, NULLABLE |
+| session_id | 대화 세션 | -> ai_chat_sessions.id, NULLABLE |
+| prompt_slug | 프롬프트 키 | TEXT |
+| model_name | 사용 모델명 | TEXT |
+| prompt_tokens | 입력 토큰 수 | INTEGER |
+| completion_tokens | 출력 토큰 수 | INTEGER |
+| total_tokens | 총 토큰 수 | INTEGER |
+| estimated_cost | 예상 비용 (USD) | NUMERIC, NULLABLE |
+| latency_ms | 응답 시간 (ms) | INTEGER, NULLABLE |
+| request_summary | 요청 요약 | TEXT, NULLABLE |
+| response_summary | 응답 요약 | TEXT, NULLABLE |
+| status | 상태 (success/error) | TEXT (default: success) |
+| error_message | 에러 메시지 | TEXT, NULLABLE |
+| created_at | 생성일시 | TIMESTAMPTZ |
+
 ---
 
 ## 기술 스택 (최신 버전)
@@ -738,12 +906,18 @@
 
 ### 백엔드 & 데이터베이스
 
-- **Supabase** - BaaS (인증, 데이터베이스, 스토리지, RLS)
-- **PostgreSQL** - 관계형 데이터베이스 (Supabase 포함, RLS로 멀티테넌시 구현)
+- **Drizzle ORM 0.45+** - TypeScript ORM (타입 안전 쿼리, 마이그레이션)
+- **PostgreSQL** - 관계형 데이터베이스 (Docker 컨테이너, 커스텀 스키마 `ai_server_composer`)
+- **pg** - PostgreSQL 네이티브 드라이버
+- **jose** - JWT 기반 자체 인증 (액세스 토큰 + 리프레시 토큰)
+- **bcryptjs** - 비밀번호 해싱
 
 ### AI & 문서 처리
 
 - **OpenAI GPT-4o** - RFP 문서 파싱 및 요구사항 추출
+- **@langchain/core + @langchain/openai** - LLM 추상화 레이어
+- **@langchain/langgraph** - 멀티턴 대화 상태 관리 (StateGraph 기반)
+- **@langchain/langgraph-checkpoint-postgres** - 대화 상태 PostgreSQL 영구 저장
 - **pdf-parse** - PDF 텍스트 추출
 - **mammoth** - DOCX 텍스트 추출
 
@@ -754,7 +928,8 @@
 
 ### 배포 & 호스팅
 
-- **Vercel** (서울 리전 icn1) - Next.js 15 최적화 배포 플랫폼
+- **Docker + docker-compose** - 컨테이너 기반 self-host 배포
+- **PostgreSQL 컨테이너** - 데이터베이스 컨테이너
 
 ### 패키지 관리
 

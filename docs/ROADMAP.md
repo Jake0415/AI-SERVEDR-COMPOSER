@@ -668,7 +668,7 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - 시드: Server_Part.xlsx 기반 카테고리 11 + 부품명 20 = 31개 코드 투입
   - UI: `/settings/part-codes` 트리뷰 관리 페이지
 
-- 🚀 **Task 082: 제품 관리 통합 — 2제품군 분리 UI + IT 인프라 장비 CRUD (F050)**
+- ✅ **Task 082: 제품 관리 통합 — 2제품군 분리 UI + IT 인프라 장비 CRUD (F050)**
   - DB: `equipment_products`, `equipment_product_prices`, `equipment_price_history` 테이블 신설
   - DB: `parts` 테이블에 `part_code_id` nullable FK 추가
   - API: `/api/equipment-products` CRUD + 가격 이력
@@ -681,12 +681,19 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - 모델명 호버 시 shadcn Tooltip으로 상세 스펙 표시
   - IT 인프라 장비 탭 + 서버 파트 탭 양쪽 동일 적용
 
-- 🚀 **Task 082-B: IT 인프라 장비 엑셀 템플릿 + 대량 업로드**
+- ✅ **Task 082-B: IT 인프라 장비 엑셀 템플릿 + 대량 업로드**
   - 엑셀 템플릿 다운로드 API + 업로드 파싱 API
   - 장비코드 → UUID 자동 매핑, 스펙 컬럼 → jsonb 변환
   - equipment-tab에 엑셀 관리 DropdownMenu 추가
   - RFP 기반 샘플 데이터 16행 포함
   - `components/ui/tooltip.tsx` 신규 설치
+
+- ✅ **Task 088: 서버 파트 엑셀 기능 개선 — IT 인프라 장비 방식 동일화**
+  - 동적 생성 템플릿 → 정적 파일(`template-doc/Server-Parts-template.xlsx`)로 전환
+  - 3시트 구조: "부품 데이터"(파트코드 기반), "코드 참조"(partCodes 목록), "안내"
+  - 업로드 API: 카테고리명 매핑 → 파트코드 매핑으로 변경, partCodeId 설정
+  - 원가 컬럼 제거 (보안: costPriceEncrypted는 별도 관리)
+  - 41행 실제 서버 부품 테스트 데이터 포함 (CPU/메모리/SSD/HDD/GPU/NIC/RAID/PSU)
 
 ### Phase 10: LangChain.js + LangGraph.js 기반 AI 대화 시스템
 
@@ -694,7 +701,7 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
 > 대화 이력 영구 저장, 멀티턴 상태 관리, LLM 비용 추적, 대화형 UI 컴포넌트 구현.
 > **FastAPI 불필요 — Next.js 단일 서버로 충분 (Docker self-host, 타임아웃 무제한)**
 
-- 📋 **Task 083: LangChain.js 패키지 설치 + DB 스키마 확장**
+- ✅ **Task 083: LangChain.js 패키지 설치 + DB 스키마 확장**
   - 패키지: `@langchain/core`, `@langchain/openai`, `@langchain/langgraph`, `@langchain/langgraph-checkpoint-postgres`
   - `next.config.ts` serverExternalPackages 추가
   - DB 테이블 3개 추가:
@@ -703,7 +710,7 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
     - `llm_api_calls` (LLM 호출 로그: promptSlug, modelName, promptTokens, completionTokens, estimatedCost, latencyMs, status)
   - Drizzle migration 실행
 
-- 📋 **Task 084: LangGraph 대화 그래프 구현**
+- ✅ **Task 084: LangGraph 대화 그래프 구현**
   - `lib/ai/graph/state.ts` — QuotationChatState (messages, currentSpecs, mode, isComplete, reply, suggestedQuestions)
   - `lib/ai/graph/nodes/extract-specs.ts` — ChatOpenAI로 사양 추출 + 의도 파악 (1회 LLM 호출)
   - `lib/ai/graph/nodes/evaluate-completeness.ts` — 필수 사양 충족 판단 (로직만, LLM 불필요)
@@ -711,20 +718,20 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - `lib/ai/graph/quotation-chat-graph.ts` — StateGraph 조립 (start→extract→evaluate→reply→END)
   - `lib/ai/graph/checkpointer.ts` — PostgreSQL 체크포인터 (thread_id별 대화 상태 자동 저장/복원)
 
-- 📋 **Task 085: LLM 호출 로거 + OpenAI 클라이언트 개선**
+- ✅ **Task 085: LLM 호출 로거 + OpenAI 클라이언트 개선**
   - `lib/ai/llm-logger.ts` — logLLMCall() 함수 (모든 호출을 DB에 자동 기록)
   - 모델별 토큰 가격 상수 (gpt-4o: $2.5/1M input, $10/1M output 등)
   - `lib/ai/openai-client.ts` 수정 — response.usage 반환 + logLLMCall 연동
   - 기존 rfp-analyzer.ts, recommendation-explainer.ts에 토큰 추적 추가
 
-- 📋 **Task 086: 멀티턴 대화 API + 세션 관리 API**
+- ✅ **Task 086: 멀티턴 대화 API + 세션 관리 API**
   - `app/api/quotation/chat/route.ts` — LangGraph 기반 멀티턴 대화 (POST: message, threadId, mode, customerId)
   - `app/api/quotation/chat/sessions/route.ts` — 사용자 대화 세션 목록 (GET)
   - `app/api/quotation/chat/[sessionId]/route.ts` — 세션 상세 조회/삭제 (GET/DELETE)
   - `app/api/ai-usage/route.ts` — 테넌트별 AI 사용량 대시보드 데이터 (GET)
   - 기존 `/api/chat-quotation` deprecated 처리
 
-- 📋 **Task 087: 대화형 UI 컴포넌트 + AI 사용량 대시보드**
+- ✅ **Task 087: 대화형 UI 컴포넌트 + AI 사용량 대시보드**
   - `components/chat/chat-input.tsx` — Textarea + Shift+Enter + 전송 버튼
   - `components/chat/chat-message.tsx` — 메시지 버블 (user/assistant 분기, 아바타)
   - `components/chat/chat-message-list.tsx` — ScrollArea + 자동스크롤 + 타이핑 인디케이터
@@ -734,14 +741,29 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - `app/(dashboard)/quotation/chat/page.tsx` 리팩터링 (309줄 단일파일 → 컴포넌트 조합)
   - `app/(dashboard)/settings/ai-usage/page.tsx` — AI 사용량 대시보드 (토큰/비용/호출수 차트)
 
+### Phase 11: UX 개선 및 버그 수정
+
+> RFP 업로드 UX 개선, pdf-parse v2 호환성 수정, IT 인프라 장비 엑셀 기능 안정화
+
+- ✅ **Task 088: pdf-parse v2 호환성 수정**
+  - `lib/parsers/pdf-parser.ts` — PDFParse 클래스 API로 변경 (v1 함수 호출 → v2 클래스 인스턴스)
+  - `next.config.ts` — `@napi-rs/canvas` serverExternalPackages 추가 (네이티브 모듈 번들링 제외)
+  - "DOMMatrix is not defined" 에러 해결
+
+- ✅ **Task 089: RFP 업로드 페이지 "작성 팁" 사이드바**
+  - `app/(dashboard)/rfp/page.tsx` — 2컬럼 flex 레이아웃으로 변경
+  - 우측 사이드바: 3개 팁 카드 (PDF 원본 사용/핵심 문서 선택/최신 버전 확인)
+  - Badge variant로 필수(destructive)/권장(secondary) 구분
+  - 접기/펼치기 토글 (ChevronRight/Left)
+  - 반응형: lg 이상에서만 표시 (hidden lg:block)
+
+- ✅ **Task 090: IT 인프라 장비 엑셀 관리 안정화**
+  - 대분류 필터 SQL 에러 수정
+  - 엑셀 템플릿 다운로드 파일명 통일
+  - 정적 파일 서빙 방식으로 템플릿 제공
+
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- Task 082: 🚀 진행 예정 (제품 관리 통합 2제품군)
-- Task 083: 📋 예정 (LangChain 패키지 + DB 스키마)
-- Task 084: 📋 예정 (LangGraph 대화 그래프)
-- Task 085: 📋 예정 (LLM 호출 로거 + 토큰 추적)
-- Task 086: 📋 예정 (멀티턴 대화 API + 세션 관리)
-- Task 087: 📋 예정 (대화형 UI + AI 사용량 대시보드)
-- 완료율: 58/66 = ~88%
+- 완료율: 76/78 = ~97% (미완료 2건은 Phase 7 서버 구성 위저드 관련)

@@ -223,7 +223,7 @@ export default function ServerPartsTab() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = "server-parts-template.xlsx"; a.click();
+      a.href = url; a.download = "Server-Parts-template.xlsx"; a.click();
       URL.revokeObjectURL(url);
     }
   };
@@ -238,7 +238,7 @@ export default function ServerPartsTab() {
       const res = await fetch("/api/parts/excel-upload", { method: "POST", body: fd });
       const json = await res.json();
       if (json.success) {
-        alert(`${json.data?.inserted ?? 0}건 등록, ${json.data?.updated ?? 0}건 수정 완료`);
+        alert(`${json.data?.successRows ?? 0}건 등록, ${json.data?.failedRows ?? 0}건 실패`);
         fetchParts();
       } else {
         alert(json.error?.message ?? "업로드 실패");
