@@ -32,11 +32,13 @@
       "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/codes/page.tsx')",
       "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/part-codes/page.tsx')",
       "Bash(ls -la '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/')",
-      "Bash(find '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings' -name \"*categories*\" -o -name \"*api*\")"
+      "Bash(find '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings' -name \"*categories*\" -o -name \"*api*\")",
+      "Bash(ls -la \"/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(quotation\\)\")"
     ],
     "additionalDirectories": [
       "c:\\claude-code\\AI-SERVEDR-COMPOSER\\app\\api\\categories",
-      "\\tmp"
+      "\\tmp",
+      "c:\\PJ-Source\\AI-SERVEDR-COMPOSER\\app\\api\\quotation\\[id]"
     ]
   }
 }

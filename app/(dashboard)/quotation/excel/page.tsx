@@ -129,10 +129,39 @@ export default function ExcelQuotationPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleGenerateQuotation = () => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleGenerateQuotation = async () => {
     if (!parsedConfigs || parsedConfigs.length === 0) return;
-    sessionStorage.setItem("excel_quotation_specs", JSON.stringify(parsedConfigs));
-    router.push(`/quotation/result?customer_id=${customerId}&source=excel`);
+    setSubmitting(true);
+
+    try {
+      const draftRes = await fetch("/api/quotation/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_id: customerId,
+          source: "excel",
+          source_data: { configs: parsedConfigs },
+        }),
+      });
+      const draftJson = await draftRes.json();
+      if (draftJson.success) {
+        router.push(
+          `/quotation/result?customer_id=${customerId}&draft_id=${draftJson.data.id}&source=excel`,
+        );
+      } else {
+        // 폴백: draft 생성 실패 시 sessionStorage 사용
+        sessionStorage.setItem("excel_quotation_specs", JSON.stringify(parsedConfigs));
+        router.push(`/quotation/result?customer_id=${customerId}&source=excel`);
+      }
+    } catch {
+      // 폴백: 네트워크 오류 시 sessionStorage 사용
+      sessionStorage.setItem("excel_quotation_specs", JSON.stringify(parsedConfigs));
+      router.push(`/quotation/result?customer_id=${customerId}&source=excel`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const displayData = parsedConfigs?.map(configToDisplay) ?? [];
@@ -317,8 +346,8 @@ export default function ExcelQuotationPage() {
               <Button variant="outline" onClick={handleClear}>
                 다시 업로드
               </Button>
-              <Button onClick={handleGenerateQuotation}>
-                견적 생성
+              <Button onClick={handleGenerateQuotation} disabled={submitting}>
+                {submitting ? "견적 초안 생성 중..." : "견적 생성"}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>

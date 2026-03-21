@@ -170,6 +170,7 @@ export default function QuotationPage() {
   const rfpId = searchParams.get("rfp_id");
   const customerId = searchParams.get("customer_id") ?? "";
   const source = searchParams.get("source"); // "chat" | "excel" | null
+  const draftId = searchParams.get("draft_id");
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -185,9 +186,21 @@ export default function QuotationPage() {
     setError(null);
 
     try {
-      // sessionStorage에서 specs 가져오기 (chat/excel 소스)
+      // draft_id가 있으면 DB에서 source_data 로드
       let specs = null;
-      if (source === "chat" || source === "excel") {
+      if ((source === "excel" || source === "chat") && draftId) {
+        try {
+          const draftRes = await fetch(`/api/quotation/${draftId}`);
+          const draftJson = await draftRes.json();
+          if (draftJson.success && draftJson.data.sourceData) {
+            specs = draftJson.data.sourceData.configs;
+          }
+        } catch {
+          // draft 로드 실패 시 sessionStorage 폴백
+        }
+      }
+      // 폴백: 기존 sessionStorage (하위 호환)
+      if (!specs && (source === "chat" || source === "excel")) {
         const key = source === "chat" ? "chat_quotation_specs" : "excel_quotation_specs";
         const stored = sessionStorage.getItem(key);
         if (stored) {
@@ -225,7 +238,7 @@ export default function QuotationPage() {
     } finally {
       setLoading(false);
     }
-  }, [rfpId, customerId, source]);
+  }, [rfpId, customerId, source, draftId]);
 
   // 견적 확정 (DB 저장)
   const handleSaveQuotation = useCallback(async (quotationType: string) => {

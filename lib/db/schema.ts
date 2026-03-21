@@ -244,6 +244,8 @@ export const quotations = schema.table("quotations", {
   vat: bigint("vat", { mode: "number" }).notNull().default(0),
   totalAmount: bigint("total_amount", { mode: "number" }).notNull().default(0),
   status: text("status").notNull().default("draft"),
+  source: text("source"),  // "rfp" | "excel" | "chat" | null
+  sourceData: jsonb("source_data"),  // 작성 중간 데이터 JSONB
   validityDate: date("validity_date").notNull(),
   deliveryTerms: text("delivery_terms"),
   deliveryDate: date("delivery_date"),

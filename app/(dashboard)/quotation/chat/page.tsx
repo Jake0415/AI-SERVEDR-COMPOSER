@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Server, Database, Brain, Monitor, Cpu } from "lucide-react";
 import { CustomerBanner } from "@/components/quotation/customer-banner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessageList } from "@/components/chat/chat-message-list";
 import { SpecsSidebar } from "@/components/chat/specs-sidebar";
@@ -13,6 +15,14 @@ import type { ParsedServerConfig } from "@/lib/types/ai";
 interface Message {
   role: "user" | "assistant";
   content: string;
+}
+
+interface ActiveSession {
+  id: string;
+  threadId: string;
+  mode: string;
+  messageCount: number;
+  updatedAt: string;
 }
 
 const WORKLOADS = [
@@ -51,6 +61,50 @@ export default function QuotationChatPage() {
   const [isComplete, setIsComplete] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [guideStep, setGuideStep] = useState<"workload" | "detail">("workload");
+  const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
+
+  // 활성 세션 목록 로드
+  useEffect(() => {
+    if (!customerId) return;
+    const loadSessions = async () => {
+      try {
+        const res = await fetch(`/api/quotation/chat/sessions?customer_id=${customerId}`);
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setActiveSessions(json.data);
+        }
+      } catch {
+        // 세션 로드 실패는 무시 (기능에 영향 없음)
+      }
+    };
+    loadSessions();
+  }, [customerId]);
+
+  // 세션 재개
+  const resumeSession = async (session: ActiveSession) => {
+    setThreadId(session.threadId);
+    try {
+      const res = await fetch(`/api/quotation/chat/${session.id}`);
+      const json = await res.json();
+      if (json.success && json.data.messages) {
+        setMessages(
+          json.data.messages.map((m: { role: "user" | "assistant"; content: string; createdAt: string }) => ({
+            role: m.role,
+            content: m.content,
+          }))
+        );
+        if (json.data.specs) {
+          setParsedSpecs(json.data.specs);
+        }
+        if (session.mode === "guide" || session.mode === "free") {
+          setMode(session.mode);
+        }
+      }
+    } catch {
+      setMessages([mode === "guide" ? GUIDE_INITIAL : FREE_INITIAL]);
+      setThreadId(null);
+    }
+  };
 
   const handleModeChange = (newMode: string) => {
     const m = newMode as "free" | "guide";
@@ -141,6 +195,33 @@ export default function QuotationChatPage() {
           </TabsList>
         </Tabs>
       </div>
+
+      {/* 이전 대화 세션 */}
+      {activeSessions.length > 0 && !threadId && (
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">이전 대화</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {activeSessions.map((session) => (
+                <div key={session.id} className="flex items-center justify-between border rounded p-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">{session.mode === "guide" ? "가이드" : "자유"}</span>
+                    <span className="ml-2">{session.messageCount}개 메시지</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {new Date(session.updatedAt).toLocaleDateString("ko-KR")}
+                    </span>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => resumeSession(session)}>
+                    이어하기
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex-1 flex gap-4 overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden">

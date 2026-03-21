@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { FileText, Sheet, MessageSquareText, BookTemplate, ArrowRight, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { FileText, Sheet, MessageSquareText, BookTemplate, ArrowRight, X, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,8 +48,63 @@ const scenarios = [
   },
 ];
 
+interface DraftItem {
+  id: string;
+  quotationNumber: string;
+  source: "rfp" | "excel" | "chat" | string;
+  customerId: string;
+  createdAt: string;
+}
+
 export default function QuotationHubPage() {
+  const router = useRouter();
   const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer | null>(null);
+  const [drafts, setDrafts] = useState<DraftItem[]>([]);
+
+  const fetchDrafts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/quotation?status=draft");
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setDrafts(json.data);
+      }
+    } catch {
+      // 조회 실패 시 무시
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDrafts();
+  }, [fetchDrafts]);
+
+  const resumeDraft = (draft: DraftItem) => {
+    const customerId = draft.customerId;
+    switch (draft.source) {
+      case "rfp":
+        router.push(`/quotation/rfp?customer_id=${customerId}&draft_id=${draft.id}`);
+        break;
+      case "excel":
+        router.push(`/quotation/excel?customer_id=${customerId}&draft_id=${draft.id}`);
+        break;
+      case "chat":
+        router.push(`/quotation/chat?customer_id=${customerId}&draft_id=${draft.id}`);
+        break;
+      default:
+        router.push(`/quotation/result?customer_id=${customerId}`);
+    }
+  };
+
+  const deleteDraft = async (id: string) => {
+    try {
+      const res = await fetch(`/api/quotation/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        await fetchDrafts();
+      }
+    } catch {
+      // 삭제 실패 시 무시
+    }
+  };
 
   const isEnabled = selectedCustomer !== null;
 
@@ -60,6 +116,39 @@ export default function QuotationHubPage() {
           의뢰 거래처를 선택한 후, 견적 생성 방법을 선택하세요.
         </p>
       </div>
+
+      {/* 작성 중인 견적 */}
+      {drafts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">작성 중인 견적</CardTitle>
+            <CardDescription>이전에 작성 중이던 견적을 이어서 작성할 수 있습니다.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {drafts.map((draft) => (
+                <div key={draft.id} className="flex items-center justify-between border rounded-lg p-3">
+                  <div>
+                    <span className="font-medium">{draft.quotationNumber}</span>
+                    <span className="text-sm text-muted-foreground ml-2">
+                      {draft.source === "rfp" ? "RFP 기반" : draft.source === "excel" ? "엑셀" : draft.source === "chat" ? "AI 대화" : ""}
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {new Date(draft.createdAt).toLocaleDateString("ko-KR")}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => resumeDraft(draft)}>이어하기</Button>
+                    <Button size="sm" variant="ghost" onClick={() => deleteDraft(draft.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Step 1: 거래처 선택 */}
       <Card>

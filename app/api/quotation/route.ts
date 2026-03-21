@@ -4,12 +4,12 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/actions";
 import { db, quotations, quotationItems, tenants } from "@/lib/db";
 import { handleApiError } from "@/lib/errors";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
 
@@ -20,10 +20,16 @@ export async function GET() {
       );
     }
 
+    const status = request.nextUrl.searchParams.get("status");
+
+    const whereCondition = status
+      ? and(eq(quotations.tenantId, user.tenantId), eq(quotations.status, status))
+      : eq(quotations.tenantId, user.tenantId);
+
     const rows = await db
       .select()
       .from(quotations)
-      .where(eq(quotations.tenantId, user.tenantId))
+      .where(whereCondition)
       .orderBy(desc(quotations.createdAt))
       .limit(100);
 
