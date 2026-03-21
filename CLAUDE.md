@@ -61,6 +61,12 @@ npx shadcn@latest add [component-name]
 - `cn()` 유틸리티로 클래스 조합하는 shadcn/ui 패턴을 따르는 컴포넌트
 - Border radius 시스템: 기본값 `10px`로 `--radius-sm`부터 `--radius-xl`까지
 
+### 토스트 메시지 (알림)
+- sonner 라이브러리 사용: `import { toast } from "sonner"`
+- 위치: 하단 오른쪽 (`position="bottom-right"`) — `app/layout.tsx`의 `<Toaster>` 설정
+- 성공: `toast.success("메시지")`, 실패: `toast.error("메시지")`
+- 모든 사용자 피드백(저장, 삭제, 에러)은 토스트로 표시
+
 ## 환경 설정
 
 환경변수를 위해 `.env.example`을 `.env.local`로 복사하세요. 스타터 킷에는 일반적인 서비스(데이터베이스, 인증, API)에 대한 샘플 설정이 포함되어 있습니다.
