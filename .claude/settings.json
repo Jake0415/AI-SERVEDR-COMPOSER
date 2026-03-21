@@ -20,7 +20,19 @@
       "Bash(taskkill /PID 24996 /F)",
       "mcp__playwright__browser_run_code",
       "Bash(git add:*)",
-      "Bash(git clone:*)"
+      "Bash(git clone:*)",
+      "Read(//c/Users/dd/Desktop/테스트 데이터/**)",
+      "Bash(find /c/PJ-Source/AI-SERVEDR-COMPOSER -name .env* -type f)",
+      "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/page.tsx')",
+      "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/prompts/page.tsx')",
+      "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/company/page.tsx')",
+      "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/ai-usage/page.tsx')",
+      "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/password/page.tsx')",
+      "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/theme/page.tsx')",
+      "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/codes/page.tsx')",
+      "Bash(cat '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/part-codes/page.tsx')",
+      "Bash(ls -la '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings/')",
+      "Bash(find '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings' -name \"*categories*\" -o -name \"*api*\")"
     ],
     "additionalDirectories": [
       "c:\\claude-code\\AI-SERVEDR-COMPOSER\\app\\api\\categories",

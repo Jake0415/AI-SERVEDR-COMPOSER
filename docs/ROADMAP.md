@@ -779,8 +779,27 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - /rfp → /quotation/rfp 라우트 이동
   - 거래처별 RFP 이력 필터링
 
+### Phase 13: LLM API Key 관리
+
+> 설정 페이지에서 OpenAI API Key를 관리하고, DB에 암호화 저장
+
+- ⏳ **Task 094: ai_settings DB 스키마 + API**
+  - ai_settings 테이블 추가
+  - GET/PUT /api/settings/ai, POST /api/settings/ai/test
+  - openai-client.ts에 DB Key 조회 우선순위 적용
+
+- ⏳ **Task 095: AI Key 관리 설정 UI**
+  - app/(dashboard)/settings/ai-keys/page.tsx
+  - API Key 입력 (마스킹), 모델 선택, 연결 테스트
+  - 설정 허브에 메뉴 카드 추가
+
+- ⏳ **Task 096: 보안 검증**
+  - AES-256-GCM 암호화 로직 검증
+  - 환경변수 폴백 동작 확인
+
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- 완료율: 79/81 = ~98% (미완료 2건: Phase 7 위저드 070-B/070-C)
+- Task 094~096: ⏳ Phase 13 LLM API Key 관리 (3건)
+- 완료율: 79/84 = ~94% (미완료 5건: Phase 7 위저드 2건 + Phase 13 API Key 관리 3건)

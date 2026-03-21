@@ -65,3 +65,9 @@ export function encryptNumber(value: number): string {
 export function decryptNumber(encryptedBase64: string): number {
   return Number(decrypt(encryptedBase64));
 }
+
+/** API Key 마스킹 (첫 7자 + **** + 마지막 4자) */
+export function maskApiKey(key: string): string {
+  if (key.length <= 11) return "****";
+  return key.substring(0, 7) + "****" + key.substring(key.length - 4);
+}

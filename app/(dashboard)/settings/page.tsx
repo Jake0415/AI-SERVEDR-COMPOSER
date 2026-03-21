@@ -3,7 +3,7 @@
 // ============================================================
 
 import Link from "next/link";
-import { FolderTree, Building2, Bell, Palette, KeyRound, BrainCircuit, Network, Cpu, BarChart3 } from "lucide-react";
+import { FolderTree, Building2, Bell, Palette, KeyRound, BrainCircuit, Network, Cpu, BarChart3, Key } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -47,6 +47,12 @@ const settingsMenu = [
     title: "AI 사용량",
     description: "LLM API 호출 현황, 토큰 사용량 및 비용 모니터링",
     icon: BarChart3,
+  },
+  {
+    href: "/settings/ai-keys",
+    title: "AI Key 관리",
+    description: "OpenAI API Key 등록 및 모델 설정",
+    icon: Key,
   },
   {
     href: "/settings/password",

@@ -499,6 +499,16 @@ export const aiChatMessages = schema.table("ai_chat_messages", {
   index("idx_ai_chat_messages_session").on(table.sessionId),
 ]);
 
+// --- AI 설정 (29) ---
+export const aiSettings = schema.table("ai_settings", {
+  id: text("id").primaryKey(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  provider: text("provider").notNull().default("openai"),
+  openaiModel: text("openai_model").notNull().default("gpt-4o"),
+  openaiApiKey: text("openai_api_key"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // --- LLM API 호출 로그 (28) ---
 export const llmApiCalls = schema.table("llm_api_calls", {
   id: uuid("id").primaryKey().defaultRandom(),

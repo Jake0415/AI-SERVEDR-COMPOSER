@@ -5,23 +5,67 @@
 import "server-only";
 
 import OpenAI from "openai";
+import { eq } from "drizzle-orm";
+import { db, aiSettings } from "@/lib/db";
+import { decrypt } from "@/lib/encryption";
 
 let clientInstance: OpenAI | null = null;
+let cachedApiKey: string | null = null;
 
-/** OpenAI 클라이언트 싱글톤 */
-export function getOpenAIClient(): OpenAI {
-  if (!clientInstance) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error("OPENAI_API_KEY 환경변수가 설정되지 않았습니다.");
+/** DB ai_settings에서 암호화된 API Key 복호화 조회 */
+async function getApiKeyFromDb(): Promise<string | null> {
+  try {
+    const rows = await db
+      .select()
+      .from(aiSettings)
+      .where(eq(aiSettings.id, "default"))
+      .limit(1);
+
+    if (rows[0]?.openaiApiKey) {
+      return decrypt(rows[0].openaiApiKey);
     }
-    clientInstance = new OpenAI({ apiKey });
+  } catch {
+    // DB 실패 시 null
   }
+  return null;
+}
+
+/** OpenAI 클라이언트 (DB Key 우선 → 환경변수 폴백) */
+export async function getOpenAIClient(): Promise<OpenAI> {
+  // 1. DB에서 API Key 조회
+  const dbKey = await getApiKeyFromDb();
+
+  // 2. 환경변수 폴백
+  const apiKey = dbKey ?? process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("OpenAI API Key가 설정되지 않았습니다. DB 또는 환경변수를 확인하세요.");
+  }
+
+  // Key가 변경되었으면 클라이언트 재생성
+  if (!clientInstance || cachedApiKey !== apiKey) {
+    clientInstance = new OpenAI({ apiKey });
+    cachedApiKey = apiKey;
+  }
+
   return clientInstance;
 }
 
-/** 사용할 모델명 */
-export function getModelName(): string {
+/** 사용할 모델명 (DB 우선 → 환경변수 폴백) */
+export async function getModelName(): Promise<string> {
+  try {
+    const rows = await db
+      .select({ openaiModel: aiSettings.openaiModel })
+      .from(aiSettings)
+      .where(eq(aiSettings.id, "default"))
+      .limit(1);
+
+    if (rows[0]?.openaiModel) {
+      return rows[0].openaiModel;
+    }
+  } catch {
+    // DB 실패 시 환경변수 폴백
+  }
   return process.env.OPENAI_MODEL ?? "gpt-4o";
 }
 
@@ -40,8 +84,8 @@ export async function requestStructuredJson<T>(
   parseResponse: (raw: string) => T,
   options?: StructuredJsonOptions,
 ): Promise<T> {
-  const client = getOpenAIClient();
-  const model = options?.model || getModelName();
+  const client = await getOpenAIClient();
+  const model = options?.model || await getModelName();
   const temperature = options?.temperature ?? 0.1;
   const maxTokens = options?.maxTokens ?? 4096;
 

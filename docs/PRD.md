@@ -231,6 +231,7 @@
 │   ├── AI 프롬프트 관리 — F017 (LLM 시스템 프롬프트 CRUD, 버전관리, 카테고리별 분류)
 │   ├── 비밀번호 변경 — 현재 비밀번호 확인 후 변경
 │   ├── 테마 설정 — 라이트/다크/시스템 모드 전환
+│   ├── AI Key 관리 — OpenAI API Key 등록/수정, 모델 선택, 연결 테스트
 │   └── 향후 확장: 알림설정, 감사 로그, 데이터 백업
 ├── 🔔 알림 센터
 │   └── 기능: F016 (실시간 알림 이력)
@@ -416,7 +417,7 @@
 
 ---
 
-## 데이터 모델 (28개 테이블)
+## 데이터 모델 (29개 테이블)
 
 ### tenants (테넌트/회사 정보 — 견적서 발행사 정보 포함)
 | 필드 | 설명 | 타입/관계 |
@@ -881,6 +882,17 @@
 | status | 상태 (success/error) | TEXT (default: success) |
 | error_message | 에러 메시지 | TEXT, NULLABLE |
 | created_at | 생성일시 | TIMESTAMPTZ |
+
+### ai_settings (AI 설정)
+
+| 필드 | 설명 | 타입/관계 |
+|------|------|----------|
+| id | 고유 식별자 | TEXT (default: 'default') |
+| tenant_id | 테넌트 | -> tenants.id |
+| provider | AI 프로바이더 | TEXT (default: openai) |
+| openai_model | 모델명 | TEXT (default: gpt-4o) |
+| openai_api_key | API Key (암호화) | TEXT, NULLABLE |
+| updated_at | 수정일시 | TIMESTAMPTZ |
 
 ---
 
