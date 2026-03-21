@@ -823,6 +823,11 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - "이어하기" 버튼으로 기존 대화 threadId 재개
   - 세션 상태: active → completed/abandoned
 
+- ⏳ **Task 101: 견적-RFP 연결 강화**
+  - /api/quotation POST에 source 파라미터 저장
+  - RFP 업로드 시 draft 자동 생성 + rfpId 연결
+  - RFP 이력에 연결된 견적 수 표시
+
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)

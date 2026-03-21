@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
       delivery_date,
       payment_terms,
       notes,
+      source,
     } = body;
 
     if (!customer_id || !quotation_type || !items || items.length === 0) {
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest) {
         vat,
         totalAmount,
         status: "draft",
+        source: source || null,
         validityDate,
         deliveryTerms: delivery_terms || null,
         deliveryDate: delivery_date || null,

@@ -275,6 +275,7 @@ export default function QuotationPage() {
         body: JSON.stringify({
           rfp_id: rfpId || undefined,
           customer_id: customerId || undefined,
+          source: rfpId ? "rfp" : source || null,
           quotation_type: quotationType,
           items,
           total_cost: draft.total_cost,

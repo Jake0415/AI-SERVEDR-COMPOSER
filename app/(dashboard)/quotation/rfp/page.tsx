@@ -24,6 +24,7 @@ interface RfpRecord {
   status: string;
   createdAt: string;
   parsedRequirements: ParsedServerConfig[] | null;
+  linkedQuotationCount?: number;
 }
 
 interface UploadResult {
@@ -290,6 +291,7 @@ export default function RfpPage() {
                       <TableHead>날짜</TableHead>
                       <TableHead>파일명</TableHead>
                       <TableHead>상태</TableHead>
+                      <TableHead>연결 견적</TableHead>
                       <TableHead className="text-right">액션</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -303,6 +305,11 @@ export default function RfpPage() {
                           {rfp.fileName}
                         </TableCell>
                         <TableCell>{statusBadge(rfp.status)}</TableCell>
+                        <TableCell>
+                          {rfp.linkedQuotationCount ? (
+                            <Badge variant="secondary">{rfp.linkedQuotationCount}건</Badge>
+                          ) : "-"}
+                        </TableCell>
                         <TableCell className="text-right space-x-2">
                           {rfp.status === "parsed" && (
                             <>
