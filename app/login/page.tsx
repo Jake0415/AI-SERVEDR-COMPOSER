@@ -69,7 +69,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
-              <Input id="email" type="email" placeholder="admin@company.co.kr" {...register("email", { required: "이메일을 입력하세요" })} />
+              <Input id="email" type="text" placeholder="admin@company.co.kr" {...register("email", { required: "이메일을 입력하세요" })} />
               {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">

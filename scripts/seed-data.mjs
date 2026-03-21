@@ -51,10 +51,10 @@ async function main() {
       quotation_prefix = EXCLUDED.quotation_prefix`;
   console.log("Step 1: 테넌트 UPSERT 완료");
 
-  // Step 2: 사용자 UPSERT (super_admin)
-  const passwordHash = await bcryptjs.hash("@Dnflwlq01", 12);
+  // Step 2: 사용자 UPSERT (super_admin + admin)
+  const superAdminHash = await bcryptjs.hash("1111", 12);
   await sql`INSERT INTO ai_server_composer.users (id, tenant_id, email, password_hash, name, phone, department, role)
-    VALUES (${USER}, ${TENANT}, 'yhk71261@gmail.com', ${passwordHash}, '관리자', '010-0000-0000', '개발팀', 'super_admin')
+    VALUES (${USER}, ${TENANT}, '1111', ${superAdminHash}, '최고관리자', '010-0000-0000', '개발팀', 'super_admin')
     ON CONFLICT (id) DO UPDATE SET
       email = EXCLUDED.email,
       password_hash = EXCLUDED.password_hash,
@@ -62,7 +62,20 @@ async function main() {
       phone = EXCLUDED.phone,
       department = EXCLUDED.department,
       role = EXCLUDED.role`;
-  console.log("Step 2: 사용자(super_admin) UPSERT 완료 — yhk71261@gmail.com");
+  console.log("Step 2-1: 사용자(super_admin) UPSERT 완료 — 1111/1111");
+
+  const adminHash = await bcryptjs.hash("2222", 12);
+  const ADMIN_USER = "56817658-ba49-4599-ae9f-a1f86550ce31";
+  await sql`INSERT INTO ai_server_composer.users (id, tenant_id, email, password_hash, name, phone, department, role)
+    VALUES (${ADMIN_USER}, ${TENANT}, '2222', ${adminHash}, '관리자', '010-1111-1111', '영업팀', 'admin')
+    ON CONFLICT (id) DO UPDATE SET
+      email = EXCLUDED.email,
+      password_hash = EXCLUDED.password_hash,
+      name = EXCLUDED.name,
+      phone = EXCLUDED.phone,
+      department = EXCLUDED.department,
+      role = EXCLUDED.role`;
+  console.log("Step 2-2: 사용자(admin) UPSERT 완료 — 2222/2222");
 
   // Step 3: 카테고리 14개 UPSERT
   const categories = [
@@ -572,7 +585,7 @@ async function main() {
 
   await sql.end();
   console.log("\n=== 전체 시드 데이터 투입 완료 ===");
-  console.log("로그인: yhk71261@gmail.com / @Dnflwlq01");
+  console.log("로그인: 1111/1111 (최고관리자) 또는 2222/2222 (관리자)");
 }
 
 main().catch(e => { console.error(e); process.exit(1); });
