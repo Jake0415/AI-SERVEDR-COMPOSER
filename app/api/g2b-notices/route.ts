@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: [],
-        message: "나라장터 API 키(G2B_API_KEY)를 설정하면 공고를 자동 수집합니다.",
+        message: "나라장터 연동이 설정되지 않았습니다.",
       });
     }
 

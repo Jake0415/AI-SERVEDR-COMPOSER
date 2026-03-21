@@ -41,7 +41,7 @@ export default function QuotationChatPage() {
 
   useEffect(() => {
     if (!customerId) router.replace("/quotation");
-  }, [customerId, router]);
+  }, [customerId, router]); // router는 Next.js에서 안정적 참조
 
   const [mode, setMode] = useState<"free" | "guide">(initialMode);
   const [messages, setMessages] = useState<Message[]>([initialMode === "guide" ? GUIDE_INITIAL : FREE_INITIAL]);

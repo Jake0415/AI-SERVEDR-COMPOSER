@@ -82,7 +82,7 @@ export default function CustomersPage() {
       const json = await res.json();
       if (json.success) setCustomers(json.data);
     } catch {
-      // ignore
+      // 거래처 조회 실패 시 기본값 유지
     } finally {
       setLoading(false);
     }
@@ -124,7 +124,7 @@ export default function CustomersPage() {
         setDialogOpen(true);
       }
     } catch {
-      // ignore
+      // 거래처 상세 조회 실패 시 무시
     }
   };
 
@@ -195,7 +195,7 @@ export default function CustomersPage() {
       setDeleteTarget(null);
       await fetchCustomers();
     } catch {
-      // ignore
+      // 삭제 실패 시 무시 (목록 재조회로 상태 동기화)
     }
   };
 

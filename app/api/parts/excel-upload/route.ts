@@ -45,6 +45,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!file.name.endsWith('.xlsx')) {
+      return NextResponse.json(
+        { success: false, error: { code: "BAD_REQUEST", message: "xlsx 파일만 업로드 가능합니다." } },
+        { status: 400 },
+      );
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { success: false, error: { code: "BAD_REQUEST", message: "파일 크기는 10MB 이하여야 합니다." } },
+        { status: 400 },
+      );
+    }
+
     // 엑셀 파싱
     const arrayBuffer = await file.arrayBuffer();
     const workbook = new ExcelJS.Workbook();

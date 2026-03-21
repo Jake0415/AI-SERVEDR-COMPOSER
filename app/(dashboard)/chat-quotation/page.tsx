@@ -82,7 +82,7 @@ export default function ChatQuotationPage() {
       {/* 메시지 영역 */}
       <div className="flex-1 overflow-y-auto space-y-4 pb-4">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}>
+          <div key={`${msg.role}-${idx}-${msg.timestamp.getTime()}`} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : ""}`}>
             {msg.role === "assistant" && (
               <div className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <Bot className="h-4 w-4 text-primary" />

@@ -58,7 +58,10 @@ export async function GET(request: NextRequest) {
       data: { summary, byModel, byPrompt, period },
     });
   } catch (error) {
-    console.error("[ai-usage] Error:", error);
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error("[ai-usage] Error:", error);
+    }
     return NextResponse.json({ success: false, error: { code: "INTERNAL_ERROR", message: "사용량 조회 실패" } }, { status: 500 });
   }
 }

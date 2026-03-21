@@ -77,9 +77,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       data: updated,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "카테고리 수정 중 오류가 발생했습니다.";
+    console.error("[API Error] PUT /api/categories/[id]", error instanceof Error ? error.message : error);
     return NextResponse.json<ApiResponse<null>>(
-      { success: false, error: { code: "INTERNAL_ERROR", message } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: "카테고리 수정 중 오류가 발생했습니다." } },
       { status: 500 },
     );
   }
@@ -156,9 +156,9 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       data: { id },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "카테고리 삭제 중 오류가 발생했습니다.";
+    console.error("[API Error] DELETE /api/categories/[id]", error instanceof Error ? error.message : error);
     return NextResponse.json<ApiResponse<null>>(
-      { success: false, error: { code: "INTERNAL_ERROR", message } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: "카테고리 삭제 중 오류가 발생했습니다." } },
       { status: 500 },
     );
   }

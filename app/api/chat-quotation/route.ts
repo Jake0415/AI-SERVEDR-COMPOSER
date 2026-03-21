@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          reply: "AI 서비스가 설정되지 않았습니다. OPENAI_API_KEY 환경변수를 확인해주세요.",
+          reply: "AI 서비스를 사용할 수 없습니다. 관리자에게 문의하세요.",
           specs: null,
           is_complete: false,
         },

@@ -12,7 +12,11 @@ export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret) {
+    return NextResponse.json({ error: "CRON_SECRET이 설정되지 않았습니다." }, { status: 401 });
+  }
+
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -119,7 +123,10 @@ export async function POST(request: NextRequest) {
       data: { processedTenants: processedCount, totalActive: activeSettings.length },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "스냅샷 생성 중 오류";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error("[API Error] /api/cron/price-snapshot", error instanceof Error ? error.message : error);
+    }
+    return NextResponse.json({ success: false, error: { code: "INTERNAL_ERROR", message: "스냅샷 생성 중 오류가 발생했습니다." } }, { status: 500 });
   }
 }

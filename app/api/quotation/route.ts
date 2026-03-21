@@ -24,7 +24,8 @@ export async function GET() {
       .select()
       .from(quotations)
       .where(eq(quotations.tenantId, user.tenantId))
-      .orderBy(desc(quotations.createdAt));
+      .orderBy(desc(quotations.createdAt))
+      .limit(100);
 
     return NextResponse.json({ success: true, data: rows });
   } catch (error) {

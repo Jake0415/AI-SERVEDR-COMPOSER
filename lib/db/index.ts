@@ -18,9 +18,7 @@ function createDrizzle() {
     throw new Error("DATABASE_URL 환경변수가 설정되지 않았습니다.");
   }
 
-  const client = postgres(connectionString, {
-    prepare: false,
-  });
+  const client = postgres(connectionString);
 
   return drizzle(client, {
     schema: { ...schema, ...relations },

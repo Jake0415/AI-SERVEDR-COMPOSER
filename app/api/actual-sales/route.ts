@@ -23,7 +23,8 @@ export async function GET() {
       .select()
       .from(actualSales)
       .where(eq(actualSales.tenantId, user.tenantId))
-      .orderBy(desc(actualSales.createdAt));
+      .orderBy(desc(actualSales.createdAt))
+      .limit(100);
 
     return NextResponse.json({ success: true, data: rows });
   } catch (error) {

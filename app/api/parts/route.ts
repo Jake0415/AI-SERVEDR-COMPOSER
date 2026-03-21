@@ -103,9 +103,9 @@ export async function GET(request: NextRequest) {
       data: { items, total, page, limit },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "부품 목록 조회 중 오류가 발생했습니다.";
+    console.error("[API Error] GET /api/parts", error instanceof Error ? error.message : error);
     return NextResponse.json<ApiResponse<null>>(
-      { success: false, error: { code: "INTERNAL_ERROR", message } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: "부품 목록 조회 중 오류가 발생했습니다." } },
       { status: 500 },
     );
   }
@@ -181,9 +181,9 @@ export async function POST(request: NextRequest) {
       data: newPart,
     }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "부품 등록 중 오류가 발생했습니다.";
+    console.error("[API Error] POST /api/parts", error instanceof Error ? error.message : error);
     return NextResponse.json<ApiResponse<null>>(
-      { success: false, error: { code: "INTERNAL_ERROR", message } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: "부품 등록 중 오류가 발생했습니다." } },
       { status: 500 },
     );
   }

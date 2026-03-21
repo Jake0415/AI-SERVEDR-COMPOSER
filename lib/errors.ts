@@ -36,10 +36,11 @@ export function handleApiError(error: unknown): {
     };
   }
 
-  const message =
-    error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+  // 서버 로그에만 상세 에러 기록, 클라이언트에는 일반 메시지 반환
+  const detail = error instanceof Error ? error.message : String(error);
+  console.error("[API Error]", detail);
   return {
-    body: createErrorResponse("INTERNAL_ERROR", message),
+    body: createErrorResponse("INTERNAL_ERROR", "서버 내부 오류가 발생했습니다."),
     status: 500,
   };
 }

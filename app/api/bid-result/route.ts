@@ -30,6 +30,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (competitor_price !== undefined && competitor_price !== null) {
+      const parsed = Number(competitor_price);
+      if (isNaN(parsed) || parsed < 0) {
+        return NextResponse.json(
+          { success: false, error: { code: "BAD_REQUEST", message: "경쟁사 가격은 0 이상의 숫자여야 합니다." } },
+          { status: 400 },
+        );
+      }
+    }
+
     // 견적 존재 확인 + 테넌트 검증
     const [quotation] = await db
       .select()

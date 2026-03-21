@@ -37,6 +37,8 @@ description: 프로젝트 기획/설계/개발의 전 과정을 총괄하는 리
 | 에이전트 | 역할 | 호출 시점 |
 |---------|------|----------|
 | **planner** | 개별 기능 구현 계획 수립 | 특정 기능 개발 착수 시 |
+| **frontend-developer** | 페이지/컴포넌트/UI 구현 | FE 코드 작성 시 |
+| **backend-developer** | API/DB/비즈니스 로직 구현 | BE 코드 작성 시 |
 
 ## 워크플로우 모드
 
@@ -119,6 +121,9 @@ description: 프로젝트 기획/설계/개발의 전 과정을 총괄하는 리
 | "아키텍처", "기술 결정", "ADR" | architect |
 | "로드맵", "개발 일정" | development-planner |
 | "구현 계획", "기능 기획" | planner |
+| "페이지 만들어", "UI 구현", "컴포넌트", "화면" | frontend-developer |
+| "API 만들어", "DB 쿼리", "엔드포인트", "서버 로직" | backend-developer |
+| "기능 구현", "개발해줘" | planner → frontend-developer + backend-developer (병렬) |
 
 ---
 

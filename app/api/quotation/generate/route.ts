@@ -84,9 +84,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: response });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "알 수 없는 오류";
+    console.error("[API Error] /api/quotation/generate", error instanceof Error ? error.message : error);
     return NextResponse.json(
-      { success: false, error: { code: "INTERNAL_ERROR", message } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: "서버 내부 오류가 발생했습니다." } },
       { status: 500 },
     );
   }

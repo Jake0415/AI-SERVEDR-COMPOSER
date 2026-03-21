@@ -116,7 +116,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[quotation-chat] Error:", error);
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error("[quotation-chat] Error:", error);
+    }
     return NextResponse.json({
       success: false,
       error: { code: "INTERNAL_ERROR", message: "대화 처리 중 오류가 발생했습니다." },

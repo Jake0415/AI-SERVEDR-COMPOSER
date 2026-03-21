@@ -29,7 +29,10 @@ export async function GET() {
 
     return NextResponse.json({ success: true, data: sessions });
   } catch (error) {
-    console.error("[chat-sessions] Error:", error);
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error("[chat-sessions] Error:", error);
+    }
     return NextResponse.json({ success: false, error: { code: "INTERNAL_ERROR", message: "세션 목록 조회 실패" } }, { status: 500 });
   }
 }

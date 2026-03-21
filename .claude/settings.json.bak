@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "c:\\PJ-Source\\illegalGambling-Search-AI\\.claude\\commands\\docs",
+      "c:\\PJ-Source\\AI-SERVEDR-COMPOSER\\.claude\\commands"
+    ],
+    "allow": [
+      "Bash(find c:PJ-SourceillegalGambling-Search-AI -maxdepth 2 -name *.config.* -o -name *vercel* -o -name .env*)"
+    ]
+  }
+}

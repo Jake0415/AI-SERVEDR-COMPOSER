@@ -24,7 +24,9 @@ const PROTECTED_PATHS = [
 
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
-  if (!secret) return new Uint8Array();
+  if (!secret) {
+    throw new Error("JWT_SECRET 환경변수가 설정되지 않았습니다.");
+  }
   return new TextEncoder().encode(secret);
 }
 
@@ -39,7 +41,8 @@ export async function middleware(request: NextRequest) {
       await jwtVerify(token, getJwtSecret());
       isAuthenticated = true;
     } catch {
-      // 만료되거나 유효하지 않은 토큰
+      // 만료되거나 유효하지 않은 토큰 — 인증 실패로 처리
+      isAuthenticated = false;
     }
   }
 

@@ -16,7 +16,8 @@
       "mcp__shrimp-task-manager__*",
       "mcp__slack__*",
       "mcp__claude_ai_Gmail__*",
-      "Bash(wait bsx801cw4:*)"
+      "Bash(wait bsx801cw4:*)",
+      "Bash(grep -E \"\\\\.tsx?$\")"
     ],
     "deny": [
       "Bash(rm -rf *)",

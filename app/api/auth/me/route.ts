@@ -31,9 +31,9 @@ export async function GET() {
       data: user,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "사용자 정보 조회 실패";
+    console.error("[API Error] /api/auth/me", error instanceof Error ? error.message : error);
     return NextResponse.json<ApiResponse<null>>(
-      { success: false, error: { code: "INTERNAL_ERROR", message } },
+      { success: false, error: { code: "INTERNAL_ERROR", message: "사용자 정보 조회에 실패했습니다." } },
       { status: 500 },
     );
   }

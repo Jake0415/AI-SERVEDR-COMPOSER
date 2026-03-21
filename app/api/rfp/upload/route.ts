@@ -111,9 +111,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "알 수 없는 오류";
+    console.error("[API Error] /api/rfp/upload", error instanceof Error ? error.message : error);
     return NextResponse.json(
-      { success: false, error: { code: "PARSING_ERROR", message } },
+      { success: false, error: { code: "PARSING_ERROR", message: "파일 처리 중 오류가 발생했습니다." } },
       { status: 500 },
     );
   }

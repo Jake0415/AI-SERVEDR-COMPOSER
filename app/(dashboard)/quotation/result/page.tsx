@@ -73,8 +73,8 @@ function QuotationTabContent({
       </Card>
 
       {/* 서버 구성별 부품 테이블 */}
-      {draft.configs.map((config, idx) => (
-        <div key={idx} className="space-y-2">
+      {draft.configs.map((config) => (
+        <div key={config.config_name} className="space-y-2">
           <div className="flex items-center gap-2">
             <h4 className="font-semibold">{config.config_name}</h4>
             <Badge variant="secondary">x{config.quantity}</Badge>

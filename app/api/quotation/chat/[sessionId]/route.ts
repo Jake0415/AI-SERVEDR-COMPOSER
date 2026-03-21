@@ -48,7 +48,10 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: { session: sessions[0], messages } });
   } catch (error) {
-    console.error("[chat-session-detail] Error:", error);
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error("[chat-session-detail] Error:", error);
+    }
     return NextResponse.json({ success: false, error: { code: "INTERNAL_ERROR", message: "세션 조회 실패" } }, { status: 500 });
   }
 }
@@ -71,7 +74,10 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[chat-session-delete] Error:", error);
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.error("[chat-session-delete] Error:", error);
+    }
     return NextResponse.json({ success: false, error: { code: "INTERNAL_ERROR", message: "세션 삭제 실패" } }, { status: 500 });
   }
 }

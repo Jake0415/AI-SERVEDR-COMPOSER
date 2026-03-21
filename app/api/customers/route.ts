@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const rows = await query;
+    const rows = await query.limit(100);
     return NextResponse.json({ success: true, data: rows });
   } catch (error) {
     const { body, status } = handleApiError(error);
@@ -70,9 +70,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { company_name, business_number, ceo_name, address, business_type, business_item, phone, fax, email, customer_type, payment_terms, notes } = body;
 
-    if (!company_name) {
+    if (!company_name || typeof company_name !== "string") {
       return NextResponse.json(
         { success: false, error: { code: "BAD_REQUEST", message: "회사명은 필수입니다." } },
+        { status: 400 },
+      );
+    }
+
+    if (business_number && typeof business_number !== "string") {
+      return NextResponse.json(
+        { success: false, error: { code: "BAD_REQUEST", message: "사업자번호 형식이 올바르지 않습니다." } },
+        { status: 400 },
+      );
+    }
+
+    if (email && typeof email !== "string") {
+      return NextResponse.json(
+        { success: false, error: { code: "BAD_REQUEST", message: "이메일 형식이 올바르지 않습니다." } },
         { status: 400 },
       );
     }

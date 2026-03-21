@@ -15,10 +15,20 @@ export async function GET() {
   }
 
   const userList = await db
-    .select()
+    .select({
+      id: users.id,
+      tenantId: users.tenantId,
+      email: users.email,
+      name: users.name,
+      phone: users.phone,
+      department: users.department,
+      role: users.role,
+      createdAt: users.createdAt,
+    })
     .from(users)
     .where(eq(users.tenantId, user.tenantId))
-    .orderBy(users.createdAt);
+    .orderBy(users.createdAt)
+    .limit(100);
 
   return NextResponse.json({ success: true, data: userList });
 }
@@ -34,6 +44,10 @@ export async function POST(request: NextRequest) {
 
   if (!email || !password || !name) {
     return NextResponse.json({ success: false, error: { code: "VALIDATION_ERROR", message: "필수 필드 누락" } }, { status: 400 });
+  }
+
+  if (typeof password !== "string" || password.length < 8) {
+    return NextResponse.json({ success: false, error: { code: "BAD_REQUEST", message: "비밀번호는 최소 8자 이상이어야 합니다." } }, { status: 400 });
   }
 
   // 이메일 중복 확인
@@ -57,7 +71,16 @@ export async function POST(request: NextRequest) {
     phone: phone ?? "",
     department: department ?? "",
     role: role ?? "member",
-  }).returning();
+  }).returning({
+    id: users.id,
+    tenantId: users.tenantId,
+    email: users.email,
+    name: users.name,
+    phone: users.phone,
+    department: users.department,
+    role: users.role,
+    createdAt: users.createdAt,
+  });
 
   return NextResponse.json({ success: true, data: newUser }, { status: 201 });
 }

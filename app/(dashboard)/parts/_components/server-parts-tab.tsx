@@ -116,7 +116,7 @@ export default function ServerPartsTab() {
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => {
       if (d.success && d.data) setIsAdmin(d.data.role === "super_admin" || d.data.role === "admin");
-    }).catch(() => {});
+    }).catch(() => { /* 인증 조회 실패 시 기본값(비관리자) 유지 */ });
   }, []);
 
   // 파트 코드 트리 로드
@@ -129,7 +129,7 @@ export default function ServerPartsTab() {
           setCodeTree(tree);
         }
       }
-    }).catch(() => {});
+    }).catch(() => { /* 코드 트리 조회 실패 시 기본값 유지 */ });
   }, []);
 
   // 부품 목록
@@ -149,7 +149,7 @@ export default function ServerPartsTab() {
           setTotal(json.data.total);
         }
       }
-    } catch {} finally { setLoading(false); }
+    } catch { /* 부품 목록 조회 실패 시 기본값 유지 */ } finally { setLoading(false); }
   }, [majorCode, search, page]);
 
   useEffect(() => { fetchParts(); }, [fetchParts]);
