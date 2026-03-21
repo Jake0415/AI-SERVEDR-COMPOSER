@@ -217,7 +217,7 @@ export default function EquipmentTab() {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url; a.download = "equipment-template.xlsx"; a.click();
+      a.href = url; a.download = "IT-Infra-equipments-template.xlsx"; a.click();
       URL.revokeObjectURL(url);
     }
   };
