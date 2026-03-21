@@ -25,12 +25,12 @@ import {
 
 const menuItems = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard, roles: ["super_admin", "admin", "member"] },
-  { href: "/parts", label: "판매 장비 관리", icon: Wrench, roles: ["super_admin", "admin"] },
   { href: "/rfp", label: "RFP 업로드", icon: FileText, roles: ["super_admin", "admin", "member"] },
   { href: "/quotation", label: "견적 생성", icon: Calculator, roles: ["super_admin", "admin", "member"] },
   { href: "/quotation-history", label: "견적 이력", icon: ClipboardList, roles: ["super_admin", "admin", "member"] },
   { href: "/bid-history", label: "낙찰 이력", icon: TrendingUp, roles: ["super_admin", "admin", "member"] },
-{ href: "/customers", label: "거래처 관리", icon: Building2, roles: ["super_admin", "admin", "member"] },
+  { href: "/parts", label: "판매 장비 관리", icon: Wrench, roles: ["super_admin", "admin"] },
+  { href: "/customers", label: "거래처 관리", icon: Building2, roles: ["super_admin", "admin", "member"] },
   { href: "/users", label: "사용자 관리", icon: Users, roles: ["super_admin"] },
   { href: "/settings", label: "설정", icon: Settings, roles: ["super_admin", "admin"] },
 ];
