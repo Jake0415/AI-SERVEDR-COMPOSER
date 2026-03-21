@@ -3,7 +3,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and, like, or, sql, asc, desc } from "drizzle-orm";
+import { eq, and, like, or, sql, asc, desc, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { equipmentProducts, equipmentProductPrices, equipmentCodes } from "@/lib/db/schema";
 import { getCurrentUser } from "@/lib/auth/actions";
@@ -43,9 +43,8 @@ export async function GET(request: NextRequest) {
     eq(equipmentProducts.isDeleted, false),
   ];
   if (codeFilter.length > 0) {
-    conditions.push(sql`${equipmentProducts.equipmentCodeId} = ANY(${codeFilter})`);
+    conditions.push(inArray(equipmentProducts.equipmentCodeId, codeFilter));
   } else if (majorCode || minorCode) {
-    // 해당 카테고리에 코드가 없으면 결과 0건
     conditions.push(sql`1 = 0`);
   }
   if (search) {
