@@ -133,7 +133,7 @@ export default function RfpPage() {
       {/* 거래처 배너 */}
       {customerId && <CustomerBanner customerId={customerId} />}
 
-      {/* 메인 + 사이드바 flex 래퍼 */}
+      {/* 메인 + 사이드바 flex 래퍼 (페이지 전체) */}
       <div className="flex gap-6">
         {/* 왼쪽: 메인 콘텐츠 */}
         <div className="flex-1 min-w-0 space-y-6">
@@ -270,9 +270,85 @@ export default function RfpPage() {
               </Button>
             </div>
           )}
+
+          {/* RFP 이력 테이블 */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold">RFP 이력</h3>
+            {listLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : rfpList.length === 0 ? (
+              <div className="border rounded-lg p-6 text-center">
+                <FileText className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  업로드된 RFP가 없습니다.
+                </p>
+              </div>
+            ) : (
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>날짜</TableHead>
+                      <TableHead>파일명</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead className="text-right">액션</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rfpList.map((rfp) => (
+                      <TableRow key={rfp.id}>
+                        <TableCell className="text-sm">
+                          {new Date(rfp.createdAt).toLocaleDateString("ko-KR")}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">
+                          {rfp.fileName}
+                        </TableCell>
+                        <TableCell>{statusBadge(rfp.status)}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          {rfp.status === "parsed" && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  router.push(
+                                    `/quotation/configure?rfp_id=${rfp.id}&customer_id=${customerId}`
+                                  )
+                                }
+                                disabled={!customerId}
+                                title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
+                              >
+                                <ServerCog className="h-3.5 w-3.5 mr-1.5" />
+                                서버 구성
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  router.push(`/quotation/result?rfp_id=${rfp.id}&customer_id=${customerId}`)
+                                }
+                                disabled={!customerId}
+                                title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
+                              >
+                                견적 생성
+                              </Button>
+                            </>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* 오른쪽: 작성 팁 사이드바 */}
+        {/* 오른쪽: 작성 팁 사이드바 (페이지 전체 높이) */}
         {tipsOpen ? (
           <div className="hidden lg:block w-80 shrink-0">
             <Card className="sticky top-4">
@@ -323,82 +399,6 @@ export default function RfpPage() {
             <Button variant="ghost" size="icon" className="h-8 w-8 mt-1" onClick={() => setTipsOpen(true)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-          </div>
-        )}
-      </div>
-
-      {/* RFP 이력 테이블 */}
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold">RFP 이력</h3>
-        {listLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        ) : rfpList.length === 0 ? (
-          <div className="border rounded-lg p-6 text-center">
-            <FileText className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">
-              업로드된 RFP가 없습니다.
-            </p>
-          </div>
-        ) : (
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>날짜</TableHead>
-                  <TableHead>파일명</TableHead>
-                  <TableHead>상태</TableHead>
-                  <TableHead className="text-right">액션</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rfpList.map((rfp) => (
-                  <TableRow key={rfp.id}>
-                    <TableCell className="text-sm">
-                      {new Date(rfp.createdAt).toLocaleDateString("ko-KR")}
-                    </TableCell>
-                    <TableCell className="text-sm font-medium">
-                      {rfp.fileName}
-                    </TableCell>
-                    <TableCell>{statusBadge(rfp.status)}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {rfp.status === "parsed" && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              router.push(
-                                `/quotation/configure?rfp_id=${rfp.id}&customer_id=${customerId}`
-                              )
-                            }
-                            disabled={!customerId}
-                            title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
-                          >
-                            <ServerCog className="h-3.5 w-3.5 mr-1.5" />
-                            서버 구성
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              router.push(`/quotation/result?rfp_id=${rfp.id}&customer_id=${customerId}`)
-                            }
-                            disabled={!customerId}
-                            title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
-                          >
-                            견적 생성
-                          </Button>
-                        </>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
           </div>
         )}
       </div>
