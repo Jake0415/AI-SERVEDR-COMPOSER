@@ -164,7 +164,7 @@ export default function RfpPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.docx"
+              accept=".pdf"
               className="hidden"
               onChange={handleFileChange}
             />
@@ -180,7 +180,7 @@ export default function RfpPage() {
                 <Upload className="h-10 w-10 text-muted-foreground" />
                 <p className="font-medium">파일을 드래그하거나 클릭하여 업로드</p>
                 <p className="text-xs text-muted-foreground">
-                  PDF, DOCX 형식 지원 (최대 50MB)
+                  PDF 형식 지원 (최대 50MB)
                 </p>
                 <Button variant="outline" size="sm" type="button" onClick={(e) => e.stopPropagation()}>
                   파일 선택
