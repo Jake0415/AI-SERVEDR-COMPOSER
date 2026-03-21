@@ -338,13 +338,7 @@ export default function QuotationHistoryPage() {
       </div>
 
       {/* ---- 견적 목록 테이블 ---- */}
-      {loading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
-          ))}
-        </div>
-      ) : quotations.length === 0 ? (
+      {loading ? null : quotations.length === 0 ? (
         <div className="border rounded-lg p-12 text-center">
           <p className="text-muted-foreground">
             아직 생성된 견적이 없습니다.

@@ -336,18 +336,7 @@ export default function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              // 스켈레톤 로딩
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`}>
-                  {Array.from({ length: colCount }).map((_, j) => (
-                    <TableCell key={`skeleton-${i}-${j}`}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : userList.length === 0 ? (
+            {loading ? null : userList.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={colCount}

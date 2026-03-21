@@ -308,15 +308,7 @@ export default function EquipmentTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={`sk-${i}`}>
-                  {Array.from({ length: isAdmin ? 9 : 8 }).map((_, j) => (
-                    <TableCell key={`sk-${i}-${j}`}><Skeleton className="h-4 w-full" /></TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : items.length === 0 ? (
+            {loading ? null : items.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={isAdmin ? 9 : 8} className="h-24 text-center text-muted-foreground">
                   등록된 장비 제품이 없습니다.

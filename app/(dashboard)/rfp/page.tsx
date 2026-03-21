@@ -274,13 +274,7 @@ export default function RfpPage() {
           {/* RFP 이력 테이블 */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">RFP 이력</h3>
-            {listLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
-            ) : rfpList.length === 0 ? (
+            {listLoading ? null : rfpList.length === 0 ? (
               <div className="border rounded-lg p-6 text-center">
                 <FileText className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">
