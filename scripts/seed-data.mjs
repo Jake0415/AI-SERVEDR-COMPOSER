@@ -220,6 +220,9 @@ async function main() {
   ];
   for (let i = 0; i < customerData.length; i++) {
     const [cn,bn,ceo,addr,bt,bi,ct] = customerData[i];
+    // 먼저 company_name 기준으로 중복 제거 (랜덤 UUID로 생성된 이전 데이터)
+    await sql`DELETE FROM ai_server_composer.customers
+      WHERE tenant_id = ${TENANT} AND company_name = ${cn} AND id != ${customerIds[i]}`;
     await sql`INSERT INTO ai_server_composer.customers (id, tenant_id, company_name, business_number, ceo_name, address, business_type, business_item, customer_type)
       VALUES (${customerIds[i]}, ${TENANT}, ${cn}, ${bn}, ${ceo}, ${addr}, ${bt}, ${bi}, ${ct})
       ON CONFLICT (id) DO UPDATE SET
