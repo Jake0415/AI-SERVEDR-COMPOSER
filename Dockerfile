@@ -44,6 +44,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# 템플릿 파일 복사
+COPY --from=builder /app/template-doc ./template-doc
+
 # 업로드 디렉토리 생성
 RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
 
