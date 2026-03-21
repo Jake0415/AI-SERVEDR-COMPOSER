@@ -1,11 +1,11 @@
 "use client";
 
 // ============================================================
-// AI Key 관리 페이지 — OpenAI API Key 등록 및 모델 설정
+// AI 설정 페이지 — AIPROWRITER UI 패턴 기반 전면 재설계
 // ============================================================
 
 import { useEffect, useState, useCallback } from "react";
-import { Key, TestTube, Save, Loader2, ShieldCheck, Info } from "lucide-react";
+import { Bot, Sparkles, Check, Loader2, Key, Shield } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -17,41 +17,50 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 // ── 타입 정의 ──────────────────────────────────────────────
 
+type Provider = "openai" | "claude";
+
 interface AiSettings {
-  hasApiKey: boolean;
-  maskedKey: string | null;
-  model: string;
-  hasEnvKey: boolean;
+  provider: Provider;
+  openaiModel: string;
+  claudeModel: string;
+  hasOpenaiKey: boolean;
+  hasClaudeKey: boolean;
+  hasOpenaiEnvKey: boolean;
+  hasClaudeEnvKey: boolean;
+  openaiKeyMasked: string | null;
+  claudeKeyMasked: string | null;
 }
 
 // ── 모델 옵션 ──────────────────────────────────────────────
 
-const models = [
-  { value: "gpt-4o", label: "GPT-4o" },
-  { value: "gpt-4o-mini", label: "GPT-4o Mini" },
-];
+const CLAUDE_MODELS = ["claude-sonnet-4-6", "claude-haiku-4-5-20251001"];
+const OPENAI_MODELS = ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini"];
 
 // ── 메인 컴포넌트 ──────────────────────────────────────────
 
 export default function AiKeysPage() {
-  const [settings, setSettings] = useState<AiSettings | null>(null);
+  const [settings, setSettings] = useState<AiSettings>({
+    provider: "openai",
+    openaiModel: "gpt-4o",
+    claudeModel: "claude-sonnet-4-6",
+    hasOpenaiKey: false,
+    hasClaudeKey: false,
+    hasOpenaiEnvKey: false,
+    hasClaudeEnvKey: false,
+    openaiKeyMasked: null,
+    claudeKeyMasked: null,
+  });
+  const [openaiKey, setOpenaiKey] = useState("");
+  const [claudeKey, setClaudeKey] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [testingClaude, setTestingClaude] = useState(false);
+  const [testingOpenai, setTestingOpenai] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [apiKeyInput, setApiKeyInput] = useState("");
-  const [selectedModel, setSelectedModel] = useState("gpt-4o");
-  const [savingKey, setSavingKey] = useState(false);
-  const [savingModel, setSavingModel] = useState(false);
-  const [testing, setTesting] = useState(false);
 
   // ── 설정 불러오기 ────────────────────────────────────────
 
@@ -60,9 +69,8 @@ export default function AiKeysPage() {
       const res = await fetch("/api/settings/ai");
       if (!res.ok) throw new Error("설정을 불러오는데 실패했습니다.");
       const json = await res.json();
-      const data: AiSettings = json.data ?? json;
-      setSettings(data);
-      setSelectedModel(data.model || "gpt-4o");
+      const data = json.data ?? json;
+      setSettings((prev) => ({ ...prev, ...data }));
     } catch {
       toast.error("AI 설정을 불러오는데 실패했습니다.");
     } finally {
@@ -74,105 +82,81 @@ export default function AiKeysPage() {
     fetchSettings();
   }, [fetchSettings]);
 
-  // ── API Key 저장 ─────────────────────────────────────────
+  // ── 프로바이더 + 모델 저장 ─────────────────────────────
 
-  const handleSaveKey = async () => {
-    if (!apiKeyInput.trim()) {
-      toast.error("API Key를 입력해주세요.");
+  const handleSaveProviderModel = async (updates: Partial<AiSettings>) => {
+    const next = { ...settings, ...updates };
+    setSettings(next);
+    try {
+      const res = await fetch("/api/settings/ai", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: next.provider,
+          openaiModel: next.openaiModel,
+          claudeModel: next.claudeModel,
+        }),
+      });
+      if (!res.ok) throw new Error("설정 저장에 실패했습니다.");
+      toast.success("설정이 저장되었습니다.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "설정 저장에 실패했습니다.");
+      await fetchSettings();
+    }
+  };
+
+  // ── API Key 저장 ───────────────────────────────────────
+
+  const handleSaveKeys = async () => {
+    if (!openaiKey.trim() && !claudeKey.trim()) {
+      toast.error("저장할 API Key를 입력해주세요.");
       return;
     }
-    setSavingKey(true);
+    setSaving(true);
     try {
+      const body: Record<string, string> = {};
+      if (openaiKey.trim()) body.openaiApiKey = openaiKey.trim();
+      if (claudeKey.trim()) body.claudeApiKey = claudeKey.trim();
       const res = await fetch("/api/settings/ai", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ openaiApiKey: apiKeyInput.trim() }),
+        body: JSON.stringify(body),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error?.message ?? "Key 저장에 실패했습니다.");
-      }
+      if (!res.ok) throw new Error("Key 저장에 실패했습니다.");
       toast.success("API Key가 저장되었습니다.");
-      setApiKeyInput("");
+      setOpenaiKey("");
+      setClaudeKey("");
       await fetchSettings();
     } catch (e: unknown) {
-      const message =
-        e instanceof Error ? e.message : "Key 저장에 실패했습니다.";
-      toast.error(message);
+      toast.error(e instanceof Error ? e.message : "Key 저장에 실패했습니다.");
     } finally {
-      setSavingKey(false);
+      setSaving(false);
     }
   };
 
-  // ── 모델 저장 ────────────────────────────────────────────
+  // ── 연결 테스트 ────────────────────────────────────────
 
-  const handleSaveModel = async () => {
-    setSavingModel(true);
-    try {
-      const res = await fetch("/api/settings/ai", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ openaiModel: selectedModel }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error?.message ?? "모델 저장에 실패했습니다.");
-      }
-      toast.success("모델 설정이 저장되었습니다.");
-      await fetchSettings();
-    } catch (e: unknown) {
-      const message =
-        e instanceof Error ? e.message : "모델 저장에 실패했습니다.";
-      toast.error(message);
-    } finally {
-      setSavingModel(false);
-    }
-  };
-
-  // ── 연결 테스트 ──────────────────────────────────────────
-
-  const handleTest = async () => {
+  const handleTest = async (provider: Provider) => {
+    const setTesting = provider === "claude" ? setTestingClaude : setTestingOpenai;
     setTesting(true);
     try {
-      const res = await fetch("/api/settings/ai/test", { method: "POST" });
+      const res = await fetch("/api/settings/ai/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider }),
+      });
       const json = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(
-          json?.error?.message ?? "연결 테스트에 실패했습니다."
-        );
-      }
-      toast.success("OpenAI 연결 테스트 성공!");
+      if (!res.ok) throw new Error(json?.error?.message ?? "연결 테스트에 실패했습니다.");
+      const label = provider === "claude" ? "Claude" : "OpenAI";
+      toast.success(`${label} 연결 테스트 성공!`);
     } catch (e: unknown) {
-      const message =
-        e instanceof Error ? e.message : "연결 테스트에 실패했습니다.";
-      toast.error(message);
+      toast.error(e instanceof Error ? e.message : "연결 테스트에 실패했습니다.");
     } finally {
       setTesting(false);
     }
   };
 
-  // ── 상태 배지 렌더링 ────────────────────────────────────
-
-  function renderStatusBadge() {
-    if (!settings) return null;
-    if (settings.hasApiKey) {
-      return (
-        <Badge className="bg-green-600 hover:bg-green-600 text-white">
-          DB Key 설정됨
-        </Badge>
-      );
-    }
-    if (settings.hasEnvKey) {
-      return (
-        <Badge className="bg-blue-600 hover:bg-blue-600 text-white">
-          환경변수 설정됨
-        </Badge>
-      );
-    }
-    return <Badge variant="destructive">미설정</Badge>;
-  }
-
-  // ── 로딩 상태 ────────────────────────────────────────────
+  // ── 로딩 ───────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -182,155 +166,231 @@ export default function AiKeysPage() {
     );
   }
 
-  // ── 렌더링 ───────────────────────────────────────────────
+  // ── 유틸: 키 상태 Badge ────────────────────────────────
+
+  const keyBadge = (hasKey: boolean) =>
+    hasKey ? (
+      <Badge className="bg-green-600 hover:bg-green-600 text-white">API 키 설정됨</Badge>
+    ) : (
+      <Badge variant="destructive">미설정</Badge>
+    );
+
+  // ── 렌더링 ─────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
       {/* 페이지 헤더 */}
       <div>
-        <h1 className="text-2xl font-bold">AI Key 관리</h1>
+        <h1 className="text-2xl font-bold">AI 설정</h1>
         <p className="text-muted-foreground">
-          OpenAI API Key와 모델을 설정합니다.
+          AI 프로바이더, 모델, API Key를 설정합니다.
         </p>
       </div>
 
-      {/* OpenAI API Key 카드 */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-              <Key className="h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <CardTitle className="text-base">OpenAI API Key</CardTitle>
-              <CardDescription>
-                API Key를 등록하면 AI 기능을 사용할 수 있습니다.
-              </CardDescription>
-            </div>
-            {renderStatusBadge()}
-          </div>
+          <CardTitle>프로바이더 선택</CardTitle>
+          <CardDescription>사용할 AI 프로바이더를 선택하세요.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* 현재 상태 */}
-          {settings?.hasApiKey && settings.maskedKey && (
-            <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm">
-              <span className="text-muted-foreground">현재 등록된 Key: </span>
-              <code className="font-mono">{settings.maskedKey}</code>
-            </div>
-          )}
-
-          {/* Key 입력 */}
-          <div className="space-y-2">
-            <Label htmlFor="api-key">
-              {settings?.hasApiKey ? "새 API Key" : "API Key"}
-            </Label>
-            <Input
-              id="api-key"
-              type="password"
-              placeholder="sk-proj-..."
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              autoComplete="off"
-            />
-          </div>
-
-          {/* 버튼 그룹 */}
-          <div className="flex items-center gap-2">
-            <Button onClick={handleSaveKey} disabled={savingKey}>
-              {savingKey ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              저장
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleTest}
-              disabled={testing || (!settings?.hasApiKey && !settings?.hasEnvKey)}
+        <CardContent className="space-y-6">
+          {/* ── 섹션 1: 프로바이더 선택 ─────────────────── */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* Claude 카드 */}
+            <button
+              type="button"
+              onClick={() => handleSaveProviderModel({ provider: "claude" })}
+              className={`relative flex flex-col gap-2 rounded-lg border-2 p-4 text-left transition-colors ${
+                settings.provider === "claude"
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-muted-foreground/30"
+              }`}
             >
-              {testing ? (
+              {settings.provider === "claude" && (
+                <Check className="absolute right-3 top-3 h-5 w-5 text-primary" />
+              )}
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                  <Bot className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="font-semibold">Claude (Anthropic)</span>
+                  {keyBadge(settings.hasClaudeKey || settings.hasClaudeEnvKey)}
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Claude Sonnet 4.6 기반, 한국어 이해도와 구조화된 JSON 출력에 강점.
+              </p>
+            </button>
+
+            {/* GPT 카드 */}
+            <button
+              type="button"
+              onClick={() => handleSaveProviderModel({ provider: "openai" })}
+              className={`relative flex flex-col gap-2 rounded-lg border-2 p-4 text-left transition-colors ${
+                settings.provider === "openai"
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-muted-foreground/30"
+              }`}
+            >
+              {settings.provider === "openai" && (
+                <Check className="absolute right-3 top-3 h-5 w-5 text-primary" />
+              )}
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="font-semibold">GPT (OpenAI)</span>
+                  {keyBadge(settings.hasOpenaiKey || settings.hasOpenaiEnvKey)}
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                GPT-4o 기반, 빠른 응답 속도, 비용 효율적.
+              </p>
+            </button>
+          </div>
+
+          {/* ── 섹션 2: 모델 선택 ──────────────────────── */}
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold">모델 선택</h3>
+
+            {/* Claude 모델 */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">Claude (Anthropic)</Label>
+                {settings.provider === "claude" && (
+                  <Badge variant="outline" className="text-xs">활성</Badge>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {CLAUDE_MODELS.map((m) => (
+                  <Button
+                    key={m}
+                    size="sm"
+                    variant={settings.claudeModel === m ? "default" : "outline"}
+                    onClick={() => handleSaveProviderModel({ claudeModel: m })}
+                  >
+                    {m}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* OpenAI 모델 */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-muted-foreground">GPT (OpenAI)</Label>
+                {settings.provider === "openai" && (
+                  <Badge variant="outline" className="text-xs">활성</Badge>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {OPENAI_MODELS.map((m) => (
+                  <Button
+                    key={m}
+                    size="sm"
+                    variant={settings.openaiModel === m ? "default" : "outline"}
+                    onClick={() => handleSaveProviderModel({ openaiModel: m })}
+                  >
+                    {m}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── 섹션 3: API 키 관리 ────────────────────── */}
+          <Separator />
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold">API 키 관리</h3>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              API 키는 AES-256-GCM으로 암호화되어 DB에 저장됩니다.
+            </p>
+
+            {/* Claude API Key */}
+            <div className="space-y-2">
+              <Label htmlFor="claude-key">Claude API Key</Label>
+              {settings.claudeKeyMasked && (
+                <p className="text-xs font-mono text-muted-foreground">
+                  현재: {settings.claudeKeyMasked}
+                </p>
+              )}
+              <Input
+                id="claude-key"
+                type="password"
+                placeholder="sk-ant-..."
+                value={claudeKey}
+                onChange={(e) => setClaudeKey(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+
+            {/* OpenAI API Key */}
+            <div className="space-y-2">
+              <Label htmlFor="openai-key">OpenAI API Key</Label>
+              {settings.openaiKeyMasked && (
+                <p className="text-xs font-mono text-muted-foreground">
+                  현재: {settings.openaiKeyMasked}
+                </p>
+              )}
+              <Input
+                id="openai-key"
+                type="password"
+                placeholder="sk-proj-..."
+                value={openaiKey}
+                onChange={(e) => setOpenaiKey(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+
+            <Button onClick={handleSaveKeys} disabled={saving}>
+              {saving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <TestTube className="mr-2 h-4 w-4" />
+                <Key className="mr-2 h-4 w-4" />
               )}
-              연결 테스트
+              키 저장
             </Button>
           </div>
 
-          {/* 안내 메시지 */}
-          <div className="flex items-start gap-2 rounded-md bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>API Key는 AES-256-GCM으로 암호화되어 안전하게 저장됩니다.</span>
-          </div>
-        </CardContent>
-      </Card>
+          {/* ── 섹션 4: 연결 테스트 ────────────────────── */}
+          <Separator />
 
-      {/* 모델 설정 카드 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">모델 설정</CardTitle>
-          <CardDescription>
-            AI 기능에 사용할 OpenAI 모델을 선택합니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="model-select">모델</Label>
-            <Select value={selectedModel} onValueChange={setSelectedModel}>
-              <SelectTrigger className="w-full max-w-xs" id="model-select">
-                <SelectValue placeholder="모델 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {models.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            onClick={handleSaveModel}
-            disabled={savingModel || selectedModel === settings?.model}
-          >
-            {savingModel ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            저장
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* 환경변수 상태 카드 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">환경변수 상태</CardTitle>
-          <CardDescription>
-            서버 환경변수에 설정된 API Key 상태를 확인합니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between rounded-md border px-4 py-3">
-            <code className="text-sm font-mono">OPENAI_API_KEY</code>
-            {settings?.hasEnvKey ? (
-              <Badge className="bg-green-600 hover:bg-green-600 text-white">
-                설정됨
-              </Badge>
-            ) : (
-              <Badge variant="destructive">미설정</Badge>
-            )}
-          </div>
-
-          {settings?.hasApiKey && settings?.hasEnvKey && (
-            <div className="flex items-start gap-2 rounded-md bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>DB에 등록된 Key가 환경변수보다 우선 사용됩니다.</span>
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold">연결 테스트</h3>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => handleTest("claude")}
+                disabled={testingClaude || (!settings.hasClaudeKey && !settings.hasClaudeEnvKey)}
+              >
+                {testingClaude ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Bot className="mr-2 h-4 w-4" />
+                )}
+                Claude 연결 테스트
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => handleTest("openai")}
+                disabled={testingOpenai || (!settings.hasOpenaiKey && !settings.hasOpenaiEnvKey)}
+              >
+                {testingOpenai ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                OpenAI 연결 테스트
+              </Button>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>

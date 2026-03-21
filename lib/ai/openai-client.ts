@@ -69,6 +69,61 @@ export async function getModelName(): Promise<string> {
   return process.env.OPENAI_MODEL ?? "gpt-4o";
 }
 
+/** 활성 AI 프로바이더 조회 (DB 우선 → 기본값 "openai") */
+export async function getActiveProvider(): Promise<"openai" | "claude"> {
+  try {
+    const rows = await db
+      .select({ provider: aiSettings.provider })
+      .from(aiSettings)
+      .where(eq(aiSettings.id, "default"))
+      .limit(1);
+
+    const provider = rows[0]?.provider;
+    if (provider === "claude") {
+      return "claude";
+    }
+  } catch {
+    // DB 실패 시 기본값
+  }
+  return "openai";
+}
+
+/** Claude 모델명 조회 (DB 우선 → 기본값) */
+export async function getClaudeModelName(): Promise<string> {
+  try {
+    const rows = await db
+      .select({ claudeModel: aiSettings.claudeModel })
+      .from(aiSettings)
+      .where(eq(aiSettings.id, "default"))
+      .limit(1);
+
+    if (rows[0]?.claudeModel) {
+      return rows[0].claudeModel;
+    }
+  } catch {
+    // DB 실패 시 기본값
+  }
+  return "claude-sonnet-4-6";
+}
+
+/** Claude API Key 조회 (DB 우선 → 환경변수 폴백) */
+export async function getClaudeApiKey(): Promise<string | null> {
+  try {
+    const rows = await db
+      .select({ claudeApiKey: aiSettings.claudeApiKey })
+      .from(aiSettings)
+      .where(eq(aiSettings.id, "default"))
+      .limit(1);
+
+    if (rows[0]?.claudeApiKey) {
+      return decrypt(rows[0].claudeApiKey);
+    }
+  } catch {
+    // DB 실패 시 환경변수 폴백
+  }
+  return process.env.ANTHROPIC_API_KEY ?? null;
+}
+
 /** 구조화된 JSON 응답 요청 옵션 */
 export interface StructuredJsonOptions {
   model?: string | null;

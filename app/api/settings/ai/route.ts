@@ -37,6 +37,7 @@ export async function GET() {
 
     const row = rows[0];
     const hasEnvKey = Boolean(process.env.OPENAI_API_KEY);
+    const hasClaudeEnvKey = Boolean(process.env.ANTHROPIC_API_KEY);
 
     if (!row) {
       return NextResponse.json({
@@ -47,6 +48,10 @@ export async function GET() {
           hasApiKey: false,
           hasEnvKey,
           apiKeyMasked: null,
+          claudeModel: "claude-sonnet-4-6",
+          hasClaudeKey: false,
+          hasClaudeEnvKey,
+          claudeKeyMasked: null,
         },
       });
     }
@@ -65,6 +70,20 @@ export async function GET() {
       }
     }
 
+    let hasClaudeKey = false;
+    let claudeKeyMasked: string | null = null;
+
+    if (row.claudeApiKey) {
+      try {
+        const decrypted = decrypt(row.claudeApiKey);
+        hasClaudeKey = true;
+        claudeKeyMasked = maskApiKey(decrypted);
+      } catch {
+        // 복호화 실패 시 키가 손상된 것으로 간주
+        hasClaudeKey = false;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -73,6 +92,10 @@ export async function GET() {
         hasApiKey,
         hasEnvKey,
         apiKeyMasked,
+        claudeModel: row.claudeModel,
+        hasClaudeKey,
+        hasClaudeEnvKey,
+        claudeKeyMasked,
       },
     });
   } catch (error) {
@@ -105,13 +128,20 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json() as {
+      provider?: string;
       openaiModel?: string;
       openaiApiKey?: string;
+      claudeModel?: string;
+      claudeApiKey?: string;
     };
 
     const updateValues: Record<string, unknown> = {
       updatedAt: new Date(),
     };
+
+    if (body.provider) {
+      updateValues.provider = body.provider;
+    }
 
     if (body.openaiModel) {
       updateValues.openaiModel = body.openaiModel;
@@ -121,15 +151,25 @@ export async function PUT(request: NextRequest) {
       updateValues.openaiApiKey = encrypt(body.openaiApiKey);
     }
 
+    if (body.claudeModel) {
+      updateValues.claudeModel = body.claudeModel;
+    }
+
+    if (body.claudeApiKey) {
+      updateValues.claudeApiKey = encrypt(body.claudeApiKey);
+    }
+
     // UPSERT: INSERT ... ON CONFLICT DO UPDATE
     await db
       .insert(aiSettings)
       .values({
         id: SETTINGS_ID,
         tenantId: user.tenantId,
-        provider: "openai",
+        provider: (body.provider as string) || "openai",
         openaiModel: (body.openaiModel as string) || "gpt-4o",
         openaiApiKey: body.openaiApiKey ? encrypt(body.openaiApiKey) : null,
+        claudeModel: (body.claudeModel as string) || "claude-sonnet-4-6",
+        claudeApiKey: body.claudeApiKey ? encrypt(body.claudeApiKey) : null,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({

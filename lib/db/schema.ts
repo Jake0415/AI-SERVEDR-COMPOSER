@@ -506,6 +506,8 @@ export const aiSettings = schema.table("ai_settings", {
   provider: text("provider").notNull().default("openai"),
   openaiModel: text("openai_model").notNull().default("gpt-4o"),
   openaiApiKey: text("openai_api_key"),
+  claudeModel: text("claude_model").notNull().default("claude-sonnet-4-6"),
+  claudeApiKey: text("claude_api_key"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

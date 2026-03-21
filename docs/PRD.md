@@ -892,6 +892,8 @@
 | provider | AI 프로바이더 | TEXT (default: openai) |
 | openai_model | 모델명 | TEXT (default: gpt-4o) |
 | openai_api_key | API Key (암호화) | TEXT, NULLABLE |
+| claude_model | Claude 모델명 | TEXT (default: claude-sonnet-4-6) |
+| claude_api_key | Claude API Key (암호화) | TEXT, NULLABLE |
 | updated_at | 수정일시 | TIMESTAMPTZ |
 
 ---

@@ -787,6 +787,7 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - ai_settings 테이블 추가
   - GET/PUT /api/settings/ai, POST /api/settings/ai/test
   - openai-client.ts에 DB Key 조회 우선순위 적용
+  - 멀티 프로바이더(Claude/GPT) 지원: claude_model, claude_api_key 컬럼 추가, 연결 테스트 provider 분기
 
 - ✅ **Task 095: AI Key 관리 설정 UI**
   - app/(dashboard)/settings/ai-keys/page.tsx
