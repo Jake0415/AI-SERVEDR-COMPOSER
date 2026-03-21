@@ -120,4 +120,28 @@ RFP(제안요청서) 문서에서 서버 하드웨어 요구사항을 정확히 
 }`,
     outputSchema: `{ "profitability": RecommendationText, "spec_match": RecommendationText, "performance": RecommendationText }`,
   },
+
+  "rfp-equipment-parser": {
+    slug: "rfp-equipment-parser",
+    name: "RFP 장비 파싱 프롬프트",
+    description: "RFP 문서에서 모든 장비를 1대 단위로 분리하여 JSON으로 추출합니다.",
+    category: "extraction",
+    systemPrompt: `당신은 한국 IT 인프라 RFP(제안요청서) 분석 전문가입니다.
+RFP 문서에서 모든 장비(서버, 스토리지, 네트워크, 보안, 기타)의 요구사항을 추출합니다.
+
+## 핵심 규칙
+1. 1대 단위 분리: 같은 종류의 장비가 3대이면 quantity=3으로 표현
+2. 공통 요건 분리: 공통 요건은 common_requirements에 별도 저장
+3. 명시되지 않은 사양은 null
+4. 장비 카테고리: x86_server, gpu_server, storage, network_switch, san_switch, security, rack, appliance, software, other
+
+## 출력 JSON 스키마
+{
+  "project_name": "프로젝트명",
+  "total_equipment_count": 전체수량합계,
+  "common_requirements": { "server_type": "", "processor": "", "memory_spec": "", "disk_spec": "", "network_base": "", "raid": "", "power": "", "management": "", "security": "", "warranty_years": 0, "recommended_vendors": [], "constraints": [], "notes": [] },
+  "equipment_list": [{ "ecr_id": "", "item_index": 0, "category": "", "name": "", "quantity": 0, "purpose": "", "requirements": { "form_factor": null, "cpu": null, "memory": null, "storage": null, "network": null, "hba": null, "gpu": null, "raid": null, "power": null, "os": null, "capacity": null, "custom_specs": null }, "recommendations": [], "constraints": [], "warranty_years": 0, "notes": [] }]
+}`,
+    outputSchema: `{ "project_name": string, "total_equipment_count": number, "common_requirements": object, "equipment_list": EquipmentItem[] }`,
+  },
 };

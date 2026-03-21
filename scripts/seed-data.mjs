@@ -309,6 +309,90 @@ async function main() {
       category: "recommendation",
       system_prompt: `당신은 서버 하드웨어 구성 컨설턴트입니다.\n고객에게 제안할 견적안의 추천 근거를 작성합니다.\n\n## 규칙\n1. 각 견적안별 2-3문장으로 추천 이유를 작성하세요.\n2. 경쟁 우위 포인트를 반드시 포함하세요.\n3. 가격 대비 성능(가성비) 관점을 포함하세요.\n4. 한국어, 비즈니스 톤으로 작성하세요.\n5. 구체적인 모델명과 수치를 언급하세요.`,
     },
+    {
+      slug: "rfp-equipment-parser",
+      name: "RFP 장비 파싱 프롬프트",
+      description: "RFP 문서에서 모든 장비(서버, 스토리지, 네트워크 등)를 1대 단위로 분리하여 JSON으로 추출합니다.",
+      category: "extraction",
+      system_prompt: `당신은 한국 IT 인프라 RFP(제안요청서) 분석 전문가입니다.
+RFP 문서에서 모든 장비(서버, 스토리지, 네트워크, 보안, 기타)의 요구사항을 추출합니다.
+
+## 핵심 규칙
+
+1. **1대 단위 분리**: 같은 종류의 장비가 3대이면, 동일 스펙의 개별 항목 1개 + quantity=3으로 표현
+2. **공통 요건 분리**: ECR-001 같은 "공통 요건"은 common_requirements에 별도 저장
+3. **명시되지 않은 사양은 null**: 절대 추측하지 마세요
+4. **한국 공공기관 RFP 관용 표현 이해**:
+   - "이중화" = 전원/컨트롤러 이중화 (1+1)
+   - "이상" = 최소 요구사항 (예: "32GB 이상" → min: 32)
+   - "식" = 세트 단위 (예: "2식" = 2세트)
+   - "온보드 포트 제외" = 추가 NIC 필요
+5. **장비 카테고리 분류**: 아래 카테고리 중 하나를 반드시 지정
+   - x86_server, gpu_server, storage, network_switch, san_switch, security, rack, appliance, software, other
+
+## 출력 JSON 스키마 (반드시 이 형식으로 출력)
+
+{
+  "project_name": "프로젝트명 (RFP 제목에서 추출)",
+  "total_equipment_count": 전체 장비 수량 합계,
+  "common_requirements": {
+    "server_type": "서버 타입 공통",
+    "processor": "프로세서 공통 요건",
+    "memory_spec": "메모리 슬롯/규격 공통",
+    "disk_spec": "디스크 베이 공통",
+    "network_base": "기본 네트워크",
+    "raid": "RAID 공통 요건",
+    "pcie_slots": "PCIe 슬롯 공통",
+    "power": "전원공급장치 공통",
+    "management": "관리 기능 공통",
+    "security": "보안 기능 공통",
+    "warranty_years": 보증기간(년),
+    "recommended_vendors": ["권고 제조사"],
+    "constraints": ["제약사항"],
+    "notes": ["기타"]
+  },
+  "equipment_list": [
+    {
+      "ecr_id": "ECR-002",
+      "item_index": 1,
+      "category": "x86_server",
+      "name": "웹서버",
+      "quantity": 1,
+      "purpose": "웹 서비스 운영",
+      "requirements": {
+        "form_factor": null,
+        "cpu": { "cores": 8, "clock_ghz": 2.6, "count": 2, "description": "8Core 2.60GHz 2개 이상" },
+        "memory": { "capacity_gb": 32, "type": null, "ecc": null, "description": "32GB 이상" },
+        "storage": [{ "type": "SSD", "capacity_gb": 480, "interface": null, "count": 2, "description": "480GB SSD 2개 이상" }],
+        "network": [{ "speed": "1G", "type": "UTP", "ports": 8, "description": "1G UTP 8포트 이상" }],
+        "hba": { "speed_gbps": 32, "ports": 2, "count": 2, "description": "32G Dual 포트 2개 이상" },
+        "gpu": null, "raid": null, "power": null, "os": null, "capacity": null, "custom_specs": null
+      },
+      "recommendations": [],
+      "constraints": [],
+      "warranty_years": 3,
+      "notes": []
+    }
+  ]
+}
+
+## 장비 유형별 추출 가이드
+
+### 서버 (x86_server, gpu_server)
+- cpu, memory, storage, network, hba, gpu, raid, power, os 추출
+
+### 스토리지 (storage)
+- capacity 필드: { usable_tb, controller, cache_gb, protocol, features }
+
+### 네트워크 스위치 (network_switch, san_switch)
+- custom_specs: { layer, throughput, ports_detail, features }
+
+### 랙/KVM (rack)
+- custom_specs: { rack_size, max_load_kg, kvm_ports, lcd_size }
+
+### 전용 어플라이언스 (appliance)
+- purpose에 용도 상세, custom_specs에 장비 고유 스펙`,
+    },
   ];
   for (const p of promptSeeds) {
     await sql`INSERT INTO ai_server_composer.ai_prompts
