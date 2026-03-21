@@ -798,8 +798,34 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - AES-256-GCM 암호화 로직 검증
   - 환경변수 폴백 동작 확인
 
+### Phase 14: 견적 작성 중단/재개
+
+> 견적 작성 중 중단하고 나중에 재개할 수 있는 기능
+
+- ⏳ **Task 097: quotations 테이블 확장 + Draft API**
+  - source (rfp/excel/chat), source_data (JSONB) 컬럼 추가
+  - POST /api/quotation/draft — 초안 자동 생성
+  - PUT /api/quotation/[id]/draft — 초안 업데이트
+  - GET /api/quotation?status=draft — 미완성 초안 목록
+
+- ⏳ **Task 098: 견적 허브 "작성 중인 견적" UI**
+  - 견적 생성 허브에 draft 상태 견적 목록 섹션 추가
+  - 재개 버튼 → 해당 경로(RFP/엑셀/대화)로 이동
+  - 삭제 버튼으로 draft 정리
+
+- ⏳ **Task 099: 엑셀 sessionStorage → DB 전환**
+  - 엑셀 파싱 결과를 sessionStorage 대신 draft.source_data에 저장
+  - 결과 페이지에서 draft source_data에서 로드
+  - 페이지 이탈 시에도 데이터 유지
+
+- ⏳ **Task 100: AI 대화 세션 재개 UI**
+  - 활성 ai_chat_sessions 목록 표시
+  - "이어하기" 버튼으로 기존 대화 threadId 재개
+  - 세션 상태: active → completed/abandoned
+
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- 완료율: 82/84 = ~98% (미완료 2건: Phase 7 위저드 070-B/070-C)
+- Task 097~100: ⏳ 진행 예정 (견적 작성 중단/재개)
+- 완료율: 82/88 = ~93% (미완료 6건: Phase 7 위저드 2건 + Phase 14 4건)
