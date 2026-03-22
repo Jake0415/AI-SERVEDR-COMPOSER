@@ -7,39 +7,35 @@ import "server-only";
 import { requestStructuredJson } from "./openai-client";
 import { getPrompt } from "./prompt-loader";
 import { DEFAULT_PROMPTS } from "./default-prompts";
-import { rfpParsingResultSchema } from "@/lib/types/schemas";
-import type { ParsedServerConfig } from "@/lib/types/ai";
 
 /**
  * RFP 텍스트를 분석하여 구조화된 서버 구성 요구사항을 추출
  * @param rfpText - RFP 문서에서 추출된 텍스트
  * @param tenantId - 테넌트 ID (프롬프트 로딩용)
- * @returns 파싱된 서버 구성 배열
+ * @returns 파싱된 결과 (equipment_list 또는 configs 구조)
  */
 export async function analyzeRfpDocument(
   rfpText: string,
   tenantId?: string,
-): Promise<ParsedServerConfig[]> {
+): Promise<unknown> {
   if (!rfpText.trim()) {
     throw new Error("RFP 텍스트가 비어있습니다.");
   }
 
   const prompt = tenantId
-    ? await getPrompt("rfp-analyzer", tenantId)
+    ? await getPrompt("rfp-equipment-parser", tenantId)
     : null;
 
-  const systemPrompt = prompt?.systemPrompt ?? DEFAULT_PROMPTS["rfp-analyzer"].systemPrompt;
+  const systemPrompt = prompt?.systemPrompt ?? DEFAULT_PROMPTS["rfp-equipment-parser"].systemPrompt;
 
   const result = await requestStructuredJson(
     systemPrompt,
     rfpText,
     (raw: string) => {
       const parsed = JSON.parse(raw);
-      const configs = parsed.configs ?? parsed;
-      const validated = rfpParsingResultSchema.parse(
-        Array.isArray(configs) ? configs : [configs],
-      );
-      return validated;
+      // 새 프롬프트: { project_name, equipment_list: [...] }
+      // 기존 프롬프트: { configs: [...] }
+      return parsed;
     },
     prompt ? {
       model: prompt.modelName,

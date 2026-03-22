@@ -10,6 +10,7 @@ import { analyzeRfpDocument } from "@/lib/ai/rfp-analyzer";
 import { extractTextFromPdf } from "@/lib/parsers/pdf-parser";
 import { extractTextFromDocx } from "@/lib/parsers/docx-parser";
 import { readFile } from "fs/promises";
+import path from "path";
 
 export async function POST(
   request: NextRequest,
@@ -54,8 +55,9 @@ export async function POST(
       .set({ status: "parsing" })
       .where(eq(rfpDocuments.id, id));
 
-    // 파일 읽기
-    const fileBuffer = await readFile(rfp.fileUrl);
+    // 파일 읽기 (상대 경로 → 절대 경로 변환)
+    const filePath = path.isAbsolute(rfp.fileUrl) ? rfp.fileUrl : path.resolve(rfp.fileUrl);
+    const fileBuffer = await readFile(filePath);
 
     // 텍스트 추출
     const isPdf = rfp.fileName.toLowerCase().endsWith(".pdf");
@@ -76,7 +78,7 @@ export async function POST(
     }
 
     // AI 파싱
-    const configs = await analyzeRfpDocument(text);
+    const configs = await analyzeRfpDocument(text, user.tenantId);
 
     // 결과 저장
     await db
@@ -84,9 +86,15 @@ export async function POST(
       .set({ parsedRequirements: configs, status: "parsed" })
       .where(eq(rfpDocuments.id, id));
 
+    const configCount = Array.isArray(configs)
+      ? configs.length
+      : Array.isArray((configs as Record<string, unknown>)?.equipment_list)
+        ? ((configs as Record<string, unknown>).equipment_list as unknown[]).length
+        : 0;
+
     return NextResponse.json({
       success: true,
-      data: { configs, config_count: configs.length },
+      data: { configs, config_count: configCount },
     });
   } catch (error) {
     console.error("[API Error] /api/rfp/[id]/analyze", error instanceof Error ? error.message : error);

@@ -35,7 +35,8 @@
       "Bash(find '/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(dashboard\\)/settings' -name \"*categories*\" -o -name \"*api*\")",
       "Bash(ls -la \"/c/PJ-Source/AI-SERVEDR-COMPOSER/app/\\(quotation\\)\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3200/login)",
-      "Bash(npx drizzle-kit:*)"
+      "Bash(npx drizzle-kit:*)",
+      "Bash(grep -r \"console.error\\\\|error.*500\\\\|PARSING_ERROR\" c:/PJ-Source/AI-SERVEDR-COMPOSER/app/api/rfp/[id]/analyze/route.ts -A 2 -B 2)"
     ],
     "additionalDirectories": [
       "c:\\claude-code\\AI-SERVEDR-COMPOSER\\app\\api\\categories",
