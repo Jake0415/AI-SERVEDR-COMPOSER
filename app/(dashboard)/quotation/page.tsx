@@ -54,6 +54,7 @@ interface DraftItem {
   source: "rfp" | "excel" | "chat" | string;
   customerId: string;
   rfpId: string | null;
+  sourceData: unknown;
   customerName?: string;
   status: string;
   createdAt: string;
@@ -89,21 +90,25 @@ export default function QuotationHubPage() {
   }, [fetchDrafts]);
 
   const resumeDraft = async (draft: DraftItem) => {
-    // RFP 기반이고 rfpId가 있으면 RFP 상태 확인
+    // RFP 기반: RFP 상태에 따라 분기
     if (draft.source === "rfp" && draft.rfpId) {
       try {
         const res = await fetch(`/api/rfp/${draft.rfpId}`);
         const json = await res.json();
         if (json.success && json.data?.status === "uploaded") {
-          // 파일만 업로드됨 → 업로드 화면으로
           router.push(`/quotation/rfp?customer_id=${draft.customerId}`);
           return;
         }
       } catch {
-        // API 실패 시 분석 화면으로 이동
+        // API 실패 시 분석 화면으로
       }
     }
-    // 분석 완료 또는 엑셀/AI → 분석 화면으로
+    // 엑셀 기반: sourceData 없으면 엑셀 업로드 화면으로
+    if (draft.source === "excel" && !draft.sourceData) {
+      router.push(`/quotation/excel?customer_id=${draft.customerId}`);
+      return;
+    }
+    // 그 외: 분석 화면으로
     router.push(`/quotation/analyze/${draft.id}`);
   };
 

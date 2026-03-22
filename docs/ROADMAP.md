@@ -878,18 +878,22 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
 
 > 3가지 경로(RFP/엑셀/AI)가 공통 분석 화면으로 합류, "이어하기" 통합
 
-- ⏳ **Task 112: 공통 분석 페이지 생성**
+- ✅ **Task 112: 공통 분석 페이지 생성**
   - /quotation/analyze/[draftId] — 3탭 (장비 분석/장비 매칭/견적 확정)
   - 기존 /quotation/rfp/[id] 뷰어 코드 통합
   - source별 데이터 로드 (RFP/엑셀/AI)
+  - AI 분석 시작 버튼 + 안내 UI
 
-- ⏳ **Task 113: 입력 단계 → 분석 화면 연결**
+- ✅ **Task 113: 입력 단계 → 분석 화면 연결**
   - RFP 업로드 후 "다음 단계" → /quotation/analyze/[draftId]
-  - 이어하기 경로 통일 → /quotation/analyze/[draftId]
+  - 이어하기 경로 분기: RFP uploaded→업로드화면, parsed→분석화면, 엑셀 no data→엑셀화면
+  - 파일 교체/삭제 UI (팝업 없이 즉시)
+  - RFP 이력 "현재 작업"/"이전 기록" 구분 + 상태 팝업
+  - DELETE /api/rfp/[id] API (파일+RFP+draft 삭제)
+  - "분석 시작" 버튼 제거, "다음 단계"만 표시
 
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- Task 108~113: ⏳ Phase 17~18 (6건)
-- 완료율: 93/101 = ~92%
+- 완료율: 99/103 = ~96%
