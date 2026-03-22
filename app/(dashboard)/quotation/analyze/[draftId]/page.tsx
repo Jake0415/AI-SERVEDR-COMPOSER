@@ -118,6 +118,7 @@ export default function AnalyzePage() {
   const [matches, setMatches] = useState<MatchResult[] | null>(null);
 
   const [activeTab, setActiveTab] = useState("analysis");
+  const [analyzing, setAnalyzing] = useState(false);
 
   /* ── 데이터 로드 ── */
   const fetchData = useCallback(async () => {
@@ -514,9 +515,52 @@ export default function AnalyzePage() {
                   })}
                 </div>
               ) : (
-                <p className="text-center text-muted-foreground py-8">
-                  분석 결과가 없습니다.
-                </p>
+                <div className="text-center py-12 space-y-4">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                    <Search className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="font-medium">RFP 문서에서 장비 요구사항을 분석합니다</p>
+                    <p className="text-sm text-muted-foreground">
+                      분석은 2단계로 진행됩니다: 1차 장비 목록 추출 → 2차 장비별 상세 스펙 추출
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      약 30초~2분 소요됩니다.
+                    </p>
+                  </div>
+                  {rfp && (
+                    <Button
+                      size="lg"
+                      onClick={async () => {
+                        setAnalyzing(true);
+                        try {
+                          const res = await fetch(`/api/rfp/${rfp.id}/analyze`, { method: "POST" });
+                          const json = await res.json();
+                          if (json.success) {
+                            toast.success(`${json.data?.config_count ?? 0}개 장비가 추출되었습니다.`);
+                            await fetchData();
+                          } else {
+                            toast.error(json.error?.message ?? "분석에 실패했습니다.");
+                          }
+                        } catch {
+                          toast.error("AI 분석 중 오류가 발생했습니다.");
+                        } finally {
+                          setAnalyzing(false);
+                        }
+                      }}
+                      disabled={analyzing}
+                    >
+                      {analyzing ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />AI 분석 진행 중...</>
+                      ) : (
+                        <><Cpu className="h-4 w-4 mr-2" />AI 분석 시작</>
+                      )}
+                    </Button>
+                  )}
+                  {!rfp && (
+                    <p className="text-sm text-muted-foreground">연결된 RFP 문서가 없습니다.</p>
+                  )}
+                </div>
               )}
             </TabsContent>
 
