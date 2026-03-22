@@ -138,7 +138,8 @@ export default function RfpDetailPage() {
   }
 
   /* ── equipment_list 추출 ── */
-  const parsed = rfp.parsedRequirements as Record<string, unknown> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parsed = rfp.parsedRequirements as Record<string, any> | null;
   const equipmentList: EquipmentItem[] = parsed
     ? Array.isArray(parsed)
       ? (parsed as EquipmentItem[])
@@ -195,7 +196,8 @@ export default function RfpDetailPage() {
         {/* 요약 보기 */}
         <TabsContent value="pretty" className="space-y-4">
           {/* 프로젝트 정보 */}
-          {parsed && !Array.isArray(parsed) && !!parsed.project_name && (
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {(parsed && !Array.isArray(parsed) && (parsed as Record<string, string>).project_name) ? (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">프로젝트</CardTitle>
@@ -204,11 +206,24 @@ export default function RfpDetailPage() {
                 <p className="font-medium">{String(parsed.project_name)}</p>
                 <p className="text-sm text-muted-foreground">
                   총{" "}
-                  {String(
-                    parsed.total_equipment_count ?? equipmentList.length,
-                  )}
+                  {String(parsed.total_equipment_count ?? equipmentList.length)}
                   개 장비
                 </p>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/* 공통 요건 */}
+          {parsed && !Array.isArray(parsed) && parsed.common_requirements && (
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-base">공통 요건</CardTitle></CardHeader>
+              <CardContent className="text-xs text-muted-foreground space-y-1">
+                {Object.entries(parsed.common_requirements as Record<string, unknown>).map(([k, v]) => {
+                  if (!v || (Array.isArray(v) && v.length === 0)) return null;
+                  const label: Record<string, string> = { server_type: "서버 타입", processor: "프로세서", memory_spec: "메모리", disk_spec: "디스크", network_base: "네트워크", raid: "RAID", power: "전원", management: "관리", security: "보안", warranty_years: "보증(년)", recommended_vendors: "권고 제조사", constraints: "제약사항", notes: "기타" };
+                  const display = Array.isArray(v) ? (v as string[]).join(", ") : String(v);
+                  return <p key={k}><span className="font-medium text-foreground">{label[k] ?? k}:</span> {display}</p>;
+                })}
               </CardContent>
             </Card>
           )}
@@ -217,51 +232,78 @@ export default function RfpDetailPage() {
           {equipmentList.length > 0 ? (
             <div className="grid gap-3">
               {equipmentList.map((equip, idx) => {
-                const key = equip.ecr_id
-                  ? `${String(equip.ecr_id)}-${idx}`
-                  : String(idx);
+                const key = equip.ecr_id ? `${String(equip.ecr_id)}-${idx}` : String(idx);
+                const req = equip.requirements as Record<string, unknown> | null;
                 return (
                   <Card key={key}>
                     <CardContent className="pt-4">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline">
-                            {String(equip.category ?? "기타")}
-                          </Badge>
-                          <span className="font-medium">
-                            {String(equip.name ?? `장비 ${idx + 1}`)}
-                          </span>
+                          <Badge variant="outline">{String(equip.category ?? "기타")}</Badge>
+                          <span className="font-medium">{String(equip.name ?? `장비 ${idx + 1}`)}</span>
                         </div>
-                        <Badge variant="secondary">
-                          x{String(equip.quantity ?? 1)}
-                        </Badge>
+                        <Badge variant="secondary">x{String(equip.quantity ?? 1)}</Badge>
                       </div>
+                      {equip.purpose && <p className="text-sm text-muted-foreground mb-2">용도: {String(equip.purpose)}</p>}
 
-                      {equip.purpose && (
-                        <p className="text-sm text-muted-foreground mb-1">
-                          용도: {String(equip.purpose)}
-                        </p>
-                      )}
-
-                      {equip.requirements && (
+                      {req && (() => {
+                        const desc = (obj: unknown): string => {
+                          if (!obj) return "";
+                          const o = obj as Record<string, unknown>;
+                          return o.description ? String(o.description) : JSON.stringify(obj);
+                        };
+                        const netDesc = (arr: unknown): string => {
+                          if (!Array.isArray(arr)) return JSON.stringify(arr);
+                          return (arr as Record<string, unknown>[]).map(n => n.description ? String(n.description) : `${String(n.speed ?? "")} ${String(n.type ?? "")} x${String(n.ports ?? "")}`).join(", ");
+                        };
+                        return (
                         <div className="text-xs text-muted-foreground space-y-0.5">
-                          {!!equip.requirements.cpu && (
-                            <p>CPU: {JSON.stringify(equip.requirements.cpu)}</p>
-                          )}
-                          {!!equip.requirements.memory && (
-                            <p>
-                              메모리:{" "}
-                              {JSON.stringify(equip.requirements.memory)}
-                            </p>
-                          )}
-                          {!!equip.requirements.storage && (
-                            <p>
-                              스토리지:{" "}
-                              {JSON.stringify(equip.requirements.storage)}
-                            </p>
-                          )}
+                          {req.cpu ? <p><span className="font-medium">CPU:</span> {desc(req.cpu)}</p> : null}
+                          {req.memory ? <p><span className="font-medium">메모리:</span> {desc(req.memory)}</p> : null}
+                          {req.storage ? <p><span className="font-medium">스토리지:</span> {Array.isArray(req.storage) ? (req.storage as Record<string,unknown>[]).map(s => s.description ? String(s.description) : JSON.stringify(s)).join(", ") : JSON.stringify(req.storage)}</p> : null}
+                          {req.network ? <p><span className="font-medium">네트워크:</span> {netDesc(req.network)}</p> : null}
+                          {req.hba ? <p><span className="font-medium">HBA:</span> {desc(req.hba)}</p> : null}
+                          {req.power ? <p><span className="font-medium">전원:</span> {desc(req.power)}</p> : null}
+                          {req.os ? <p><span className="font-medium">OS:</span> {String(req.os as string)}</p> : null}
+                          {req.form_factor ? <p><span className="font-medium">폼팩터:</span> {String(req.form_factor as string)}</p> : null}
+
+                          {/* 스토리지 capacity */}
+                          {req.capacity ? (() => {
+                            const cap = req.capacity as Record<string,unknown>;
+                            const capDesc: string = cap.description ? String(cap.description).substring(0, 200) : `${String(cap.usable_tb ?? "?")}TB, ${String(cap.controller ?? "")}, Cache ${String(cap.cache_gb ?? "?")}GB, ${String(cap.drive_type ?? "")}`;
+                            return (
+                              <div className="mt-1 pt-1 border-t">
+                                <p className="font-medium text-foreground">용량/컨트롤러:</p>
+                                <p>{capDesc}</p>
+                              </div>
+                            );
+                          })() : null}
+
+                          {/* custom_specs */}
+                          {req.custom_specs && typeof req.custom_specs === "object" ? (() => {
+                            const specs = req.custom_specs as Record<string, unknown>;
+                            return (
+                              <div className="mt-1 pt-1 border-t">
+                                <p className="font-medium text-foreground">상세 스펙:</p>
+                                {Object.entries(specs).map(([k, v]) => {
+                                  if (!v || (Array.isArray(v) && (v as unknown[]).length === 0) || v === "") return null;
+                                  const d: string = Array.isArray(v) ? (v as unknown[]).map(String).join(", ") : typeof v === "object" ? JSON.stringify(v) : String(v);
+                                  return <p key={k}><span className="font-medium">{k}:</span> {d}</p>;
+                                })}
+                              </div>
+                            );
+                          })() : null}
+
+                          {/* 제약사항/권장사항 */}
+                          {Array.isArray(req.constraints) && (req.constraints as string[]).length > 0 ? (
+                            <p className="mt-1 text-destructive"><span className="font-medium">제약:</span> {(req.constraints as string[]).join(", ")}</p>
+                          ) : null}
+                          {Array.isArray(req.recommendations) && (req.recommendations as string[]).length > 0 ? (
+                            <p className="mt-1 text-blue-600"><span className="font-medium">권장:</span> {(req.recommendations as string[]).join(", ")}</p>
+                          ) : null}
                         </div>
-                      )}
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 );
