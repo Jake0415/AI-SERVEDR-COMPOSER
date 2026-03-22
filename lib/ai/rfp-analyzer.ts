@@ -35,18 +35,33 @@ export async function analyzeRfpDocument(
       try {
         return JSON.parse(raw);
       } catch {
-        // JSON이 잘린 경우 마지막 완전한 객체까지 파싱 시도
-        const lastBrace = raw.lastIndexOf("}");
-        if (lastBrace > 0) {
-          return JSON.parse(raw.substring(0, lastBrace + 1));
+        // JSON이 잘린 경우 복구 시도
+        let fixed = raw;
+        // 열린 배열 닫기
+        const openBrackets = (fixed.match(/\[/g) || []).length;
+        const closeBrackets = (fixed.match(/\]/g) || []).length;
+        for (let i = 0; i < openBrackets - closeBrackets; i++) fixed += "]";
+        // 열린 객체 닫기
+        const openBraces = (fixed.match(/\{/g) || []).length;
+        const closeBraces = (fixed.match(/\}/g) || []).length;
+        for (let i = 0; i < openBraces - closeBraces; i++) fixed += "}";
+        // 마지막 불완전한 항목 제거 후 재시도
+        try {
+          return JSON.parse(fixed);
+        } catch {
+          const lastComplete = raw.lastIndexOf("},");
+          if (lastComplete > 0) {
+            const truncated = raw.substring(0, lastComplete + 1);
+            return JSON.parse(truncated + "]}");
+          }
+          throw new Error("LLM 응답이 유효한 JSON이 아닙니다.");
         }
-        throw new Error("LLM 응답이 유효한 JSON이 아닙니다.");
       }
     },
     {
       model: prompt?.modelName ?? undefined,
       temperature: prompt?.temperature ?? 0.1,
-      maxTokens: prompt?.maxTokens ?? 8192,
+      maxTokens: prompt?.maxTokens ?? 16384,
     },
   );
 
