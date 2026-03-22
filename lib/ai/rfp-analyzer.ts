@@ -32,16 +32,22 @@ export async function analyzeRfpDocument(
     systemPrompt,
     rfpText,
     (raw: string) => {
-      const parsed = JSON.parse(raw);
-      // 새 프롬프트: { project_name, equipment_list: [...] }
-      // 기존 프롬프트: { configs: [...] }
-      return parsed;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        // JSON이 잘린 경우 마지막 완전한 객체까지 파싱 시도
+        const lastBrace = raw.lastIndexOf("}");
+        if (lastBrace > 0) {
+          return JSON.parse(raw.substring(0, lastBrace + 1));
+        }
+        throw new Error("LLM 응답이 유효한 JSON이 아닙니다.");
+      }
     },
-    prompt ? {
-      model: prompt.modelName,
-      temperature: prompt.temperature,
-      maxTokens: prompt.maxTokens,
-    } : undefined,
+    {
+      model: prompt?.modelName ?? undefined,
+      temperature: prompt?.temperature ?? 0.1,
+      maxTokens: prompt?.maxTokens ?? 8192,
+    },
   );
 
   return result;

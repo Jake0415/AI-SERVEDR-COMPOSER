@@ -145,6 +145,9 @@ export default function RfpPage() {
             <p className="text-muted-foreground">
               분석할 RFP(제안요청서) 파일을 업로드하세요
             </p>
+            <p className="text-xs text-amber-600 mt-1">
+              AI 분석 정확도를 위해 인프라 장비 요구사항이 포함된 부분만 별도 PDF로 업로드해주세요.
+            </p>
           </div>
 
           {/* 드래그앤드롭 업로드 영역 */}
