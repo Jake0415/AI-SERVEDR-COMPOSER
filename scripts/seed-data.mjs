@@ -315,83 +315,62 @@ async function main() {
       description: "RFP 문서에서 모든 장비(서버, 스토리지, 네트워크 등)를 1대 단위로 분리하여 JSON으로 추출합니다.",
       category: "extraction",
       system_prompt: `당신은 한국 IT 인프라 RFP(제안요청서) 분석 전문가입니다.
-RFP 문서에서 모든 장비(서버, 스토리지, 네트워크, 보안, 기타)의 요구사항을 추출합니다.
+RFP 문서에서 모든 장비의 요구사항을 빠짐없이 상세하게 추출합니다.
 
-## 핵심 규칙
+## 핵심 규칙 (반드시 준수)
 
-1. **1대 단위 분리**: 같은 종류의 장비가 3대이면, 동일 스펙의 개별 항목 1개 + quantity=3으로 표현
-2. **공통 요건 분리**: ECR-001 같은 "공통 요건"은 common_requirements에 별도 저장
-3. **명시되지 않은 사양은 null**: 절대 추측하지 마세요
-4. **한국 공공기관 RFP 관용 표현 이해**:
-   - "이중화" = 전원/컨트롤러 이중화 (1+1)
-   - "이상" = 최소 요구사항 (예: "32GB 이상" → min: 32)
-   - "식" = 세트 단위 (예: "2식" = 2세트)
-   - "온보드 포트 제외" = 추가 NIC 필요
-5. **장비 카테고리 분류**: 아래 카테고리 중 하나를 반드시 지정
-   - x86_server, gpu_server, storage, network_switch, san_switch, security, rack, appliance, software, other
+1. **공통 요건 필수 추출**: "공통 요건", "공통 사양" 섹션(ECR-001 등)은 반드시 common_requirements에 모든 내용을 추출
+2. **1대 단위 분리**: 같은 장비 3대이면 quantity=3 하나의 항목으로
+3. **제약사항/권장사항 필수**: constraints와 recommendations는 절대 빈 배열로 두지 마세요
+   - "불가", "금지", "제외", "제한" → constraints에 추가
+   - "권고", "권장", "우선", "추천" → recommendations에 추가
+4. **스토리지/네트워크는 custom_specs 필수**: 서버가 아닌 장비는 반드시 capacity 또는 custom_specs에 모든 상세 스펙 기재
+5. **명시되지 않은 사양만 null**: RFP에 기재된 모든 정보를 빠짐없이 추출
+6. **카테고리**: x86_server, gpu_server, storage, network_switch, san_switch, security, rack, appliance, software, other
 
-## 출력 JSON 스키마 (반드시 이 형식으로 출력)
+## 출력 JSON 스키마
+
+### 서버 예시:
+{"ecr_id":"ECR-002","item_index":1,"category":"x86_server","name":"웹서버","quantity":1,"purpose":"웹 서비스 운영","requirements":{"form_factor":"2U 랙마운트","cpu":{"cores":8,"clock_ghz":2.6,"count":2,"description":"8Core 2.60GHz 2개 이상"},"memory":{"capacity_gb":32,"type":"DDR5","ecc":true,"description":"32GB 이상"},"storage":[{"type":"SSD","capacity_gb":480,"interface":"SAS/SATA","count":2,"description":"480GB SSD 2개 이상"}],"network":[{"speed":"1G","type":"UTP","ports":8,"description":"1G UTP 8포트 이상(온보드 제외)"}],"hba":{"speed_gbps":32,"ports":2,"count":2,"description":"32G Dual 포트 2개 이상"},"gpu":null,"raid":null,"power":{"redundancy":true,"description":"핫스왑 이중화 PSU"},"os":"Windows Server","capacity":null,"custom_specs":null},"recommendations":["HP, Dell, Fujitsu 서버 권고"],"constraints":["HCI장비 도입 불가","온보드 포트 제외"],"warranty_years":3,"notes":["GBIC 수량 부족 시 제안사 비용으로 제공"]}
+
+### 스토리지 예시 (capacity와 custom_specs 필수):
+{"ecr_id":"ECR-004","item_index":8,"category":"storage","name":"운영 스토리지","quantity":1,"purpose":"운영 데이터 저장","requirements":{"form_factor":null,"cpu":null,"memory":null,"storage":null,"network":[{"speed":"32Gbps","type":"FC","ports":4,"description":"FC 32Gbps x 4port"},{"speed":"10Gbps","type":"Ethernet","ports":4,"description":"10Gbps x 4port"}],"hba":null,"gpu":null,"raid":null,"power":null,"os":null,"capacity":{"usable_tb":40,"controller":"Active-Active 이중 컨트롤러","controller_max":24,"cpu_cores":24,"cache_gb":128,"drive_type":"SSD/NVMe All Flash","description":"Usable 40TB, Active-Active 이중 컨트롤러, Cache 128GB"},"custom_specs":{"protocols":["FC","iSCSI","CIFS","NFS"],"features":["Snapshot","실시간 중복제거","압축","Thin provisioning","NDMP 백업","Clone"],"scale":"Scale-up/Scale-out Unified","replication":"원격복제(DR) 지원","monitoring":"실시간 모니터링 및 성능 분석 보고서"}},"recommendations":["디스크 1개 단위 증설 지원"],"constraints":["SSD 또는 NVMe만 장착 가능한 All Flash Storage 전용"],"warranty_years":3,"notes":["GBIC 수량 부족 시 제안사 비용으로 제공"]}
+
+### 네트워크 스위치 예시 (custom_specs 필수):
+{"ecr_id":"ECR-006","item_index":10,"category":"network_switch","name":"L4 스위치","quantity":1,"purpose":"네트워크 트래픽 관리 및 로드밸런싱","requirements":{"form_factor":null,"cpu":null,"memory":null,"storage":null,"network":null,"hba":null,"gpu":null,"raid":null,"power":{"redundancy":true,"hot_swap":true,"description":"이중화 Hot-Swap PSU"},"os":null,"capacity":null,"custom_specs":{"layer":"L4","throughput":"6Gbps","concurrent_sessions":16000000,"memory_gb":16,"ha_failover":true,"ports":[{"speed":"10G SFP+","count":2},{"speed":"1G SFP","count":8}],"features":["SLB","CSLB","FW/VPNLB","HA Failover"],"gbic_included":"SFP to UTP Gbic 8port 포함"}},"recommendations":["네트워크 병목 방지 구성"],"constraints":["최소 규격이므로 병목 없는 구성 필수"],"warranty_years":1,"notes":["GBIC 수량 부족 시 제안사 비용으로 제공"]}
+
+### SAN 스위치 예시:
+{"ecr_id":"ECR-009","item_index":13,"category":"san_switch","name":"SAN 스위치","quantity":2,"purpose":"스토리지 네트워크","requirements":{"form_factor":null,"cpu":null,"memory":null,"storage":null,"network":null,"hba":null,"gpu":null,"raid":null,"power":null,"os":null,"capacity":null,"custom_specs":{"fc_speed":"32Gbps","fc_ports":16,"features":["ISL 트렁크","포트 Zoning","WWN Zoning"],"includes":["라이선스","FC케이블","SAN 구성 작업 일체"]}},"recommendations":[],"constraints":["향후 확장성을 위한 ISL 트렁크 기능 필수"],"warranty_years":1,"notes":[]}
+
+### 랙/KVM 예시:
+{"ecr_id":"ECR-010","item_index":14,"category":"rack","name":"랙 및 KVM 스위치","quantity":2,"purpose":"장비 수납 및 관리","requirements":{"form_factor":null,"cpu":null,"memory":null,"storage":null,"network":null,"hba":null,"gpu":null,"raid":null,"power":null,"os":null,"capacity":null,"custom_specs":{"rack_size":"2000(42U) x W600 x D1200","max_load_kg":900,"door":"천공형 FRONT/REAR DOOR","standards":["KS","IEC-529","IEC-297"],"kvm":{"lcd_size":"17.3인치","kvm_ports":16,"usb_adapters":24},"power_cable":"전기시설 분전반-RACK 이중화 케이블공사 포함"}},"recommendations":[],"constraints":[],"warranty_years":1,"notes":[]}
+
+### 어플라이언스 예시:
+{"ecr_id":"ECR-011","item_index":15,"category":"appliance","name":"스트리밍 서버","quantity":1,"purpose":"영상 스트리밍 서비스","requirements":{"form_factor":"1U 랙형","cpu":{"cores":16,"clock_ghz":null,"count":1,"description":"16 CORE 이상"},"memory":{"capacity_gb":16,"type":null,"ecc":null,"description":"16G 이상"},"storage":[{"type":"SSD","capacity_gb":480,"interface":null,"count":2,"description":"SSD 480G 이상 이중화"}],"network":[{"speed":"1G/10G","type":null,"ports":2,"description":"1G/10G 2Port NIC 이중화"}],"hba":null,"gpu":null,"raid":null,"power":{"redundancy":true,"min_wattage":800,"description":"800W 이상 이중화 PSU"},"os":null,"capacity":null,"custom_specs":{"streaming_capacity":"영상 500대 이하 200명 동시접속","protocols":["WebRTC","RTMP","RTSP","HLS","SRT","MPEG2-TS"],"features":["라이브 포맷변환 스트리밍","초저지연 영상 전송","HTML5 MSE 플레이백","실시간 트래픽/접속자 확인","WORM 위변조 방지"]}},"recommendations":[],"constraints":[],"warranty_years":1,"notes":[]}
+
+## 전체 출력 구조
 
 {
-  "project_name": "프로젝트명 (RFP 제목에서 추출)",
-  "total_equipment_count": 전체 장비 수량 합계,
+  "project_name": "프로젝트명",
+  "total_equipment_count": 전체수량합계,
   "common_requirements": {
-    "server_type": "서버 타입 공통",
-    "processor": "프로세서 공통 요건",
-    "memory_spec": "메모리 슬롯/규격 공통",
-    "disk_spec": "디스크 베이 공통",
-    "network_base": "기본 네트워크",
-    "raid": "RAID 공통 요건",
-    "pcie_slots": "PCIe 슬롯 공통",
-    "power": "전원공급장치 공통",
-    "management": "관리 기능 공통",
-    "security": "보안 기능 공통",
-    "warranty_years": 보증기간(년),
-    "recommended_vendors": ["권고 제조사"],
-    "constraints": ["제약사항"],
-    "notes": ["기타"]
+    "server_type": "2U 랙마운트 서버 (ECR-001 공통)",
+    "processor": "Intel 5세대 이상 Xeon Scalable, QuickAssist 지원",
+    "memory_spec": "32개 DDR5 DIMMs (4800 MT/s), 최대 RDIMM 8TB",
+    "disk_spec": "12x 3.5인치 SAS/SATA 또는 16x 2.5인치 SAS/SATA/NVMe",
+    "network_base": "듀얼포트 1GbE LOM",
+    "raid": "8GB Cache, RAID 0/1/5, H/W NVMe RAID, Boot Dual M.2 NVMe SSD",
+    "pcie_slots": "8개 PCIe GEN4 이상, SNAP I/O 지원",
+    "power": "핫스왑 이중화, 92% 이상 효율 (Platinum/Titanium)",
+    "management": "원격 콘솔, 가상 미디어, HTML5, Bluetooth/WiFi 관리",
+    "security": "USB 포트 disable, 펌웨어 잠금, 보호 저장소 부팅",
+    "warranty_years": 3,
+    "recommended_vendors": ["HP","Dell","Fujitsu","이슬림","IBM","Oracle","NVIDIA","Hitachi"],
+    "constraints": ["HCI장비 도입 불가(x86서버, 백업 서버 제외)"],
+    "notes": ["GBIC 수량 부족 시 제안사 비용으로 제공","제조사 물품공급확약서 필요","제조사 기술지원확약서 필요"]
   },
-  "equipment_list": [
-    {
-      "ecr_id": "ECR-002",
-      "item_index": 1,
-      "category": "x86_server",
-      "name": "웹서버",
-      "quantity": 1,
-      "purpose": "웹 서비스 운영",
-      "requirements": {
-        "form_factor": null,
-        "cpu": { "cores": 8, "clock_ghz": 2.6, "count": 2, "description": "8Core 2.60GHz 2개 이상" },
-        "memory": { "capacity_gb": 32, "type": null, "ecc": null, "description": "32GB 이상" },
-        "storage": [{ "type": "SSD", "capacity_gb": 480, "interface": null, "count": 2, "description": "480GB SSD 2개 이상" }],
-        "network": [{ "speed": "1G", "type": "UTP", "ports": 8, "description": "1G UTP 8포트 이상" }],
-        "hba": { "speed_gbps": 32, "ports": 2, "count": 2, "description": "32G Dual 포트 2개 이상" },
-        "gpu": null, "raid": null, "power": null, "os": null, "capacity": null, "custom_specs": null
-      },
-      "recommendations": [],
-      "constraints": [],
-      "warranty_years": 3,
-      "notes": []
-    }
-  ]
-}
-
-## 장비 유형별 추출 가이드
-
-### 서버 (x86_server, gpu_server)
-- cpu, memory, storage, network, hba, gpu, raid, power, os 추출
-
-### 스토리지 (storage)
-- capacity 필드: { usable_tb, controller, cache_gb, protocol, features }
-
-### 네트워크 스위치 (network_switch, san_switch)
-- custom_specs: { layer, throughput, ports_detail, features }
-
-### 랙/KVM (rack)
-- custom_specs: { rack_size, max_load_kg, kvm_ports, lcd_size }
-
-### 전용 어플라이언스 (appliance)
-- purpose에 용도 상세, custom_specs에 장비 고유 스펙`,
+  "equipment_list": [위 예시들의 배열]
+}`,
     },
   ];
   for (const p of promptSeeds) {

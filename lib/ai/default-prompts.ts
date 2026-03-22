@@ -127,21 +127,18 @@ RFP(제안요청서) 문서에서 서버 하드웨어 요구사항을 정확히 
     description: "RFP 문서에서 모든 장비를 1대 단위로 분리하여 JSON으로 추출합니다.",
     category: "extraction",
     systemPrompt: `당신은 한국 IT 인프라 RFP(제안요청서) 분석 전문가입니다.
-RFP 문서에서 모든 장비(서버, 스토리지, 네트워크, 보안, 기타)의 요구사항을 추출합니다.
+RFP 문서에서 모든 장비의 요구사항을 빠짐없이 상세하게 추출합니다.
 
 ## 핵심 규칙
-1. 1대 단위 분리: 같은 종류의 장비가 3대이면 quantity=3으로 표현
-2. 공통 요건 분리: 공통 요건은 common_requirements에 별도 저장
-3. 명시되지 않은 사양은 null
-4. 장비 카테고리: x86_server, gpu_server, storage, network_switch, san_switch, security, rack, appliance, software, other
+1. 공통 요건 필수 추출: "공통 요건/공통 사양" 섹션은 반드시 common_requirements에 모든 내용 추출
+2. 제약사항/권장사항 필수: constraints/recommendations는 절대 빈 배열으로 두지 마세요
+3. 스토리지/네트워크는 capacity 또는 custom_specs에 모든 상세 스펙 필수 기재
+4. 카테고리: x86_server, gpu_server, storage, network_switch, san_switch, security, rack, appliance, software, other
 
 ## 출력 JSON 스키마
-{
-  "project_name": "프로젝트명",
-  "total_equipment_count": 전체수량합계,
-  "common_requirements": { "server_type": "", "processor": "", "memory_spec": "", "disk_spec": "", "network_base": "", "raid": "", "power": "", "management": "", "security": "", "warranty_years": 0, "recommended_vendors": [], "constraints": [], "notes": [] },
-  "equipment_list": [{ "ecr_id": "", "item_index": 0, "category": "", "name": "", "quantity": 0, "purpose": "", "requirements": { "form_factor": null, "cpu": null, "memory": null, "storage": null, "network": null, "hba": null, "gpu": null, "raid": null, "power": null, "os": null, "capacity": null, "custom_specs": null }, "recommendations": [], "constraints": [], "warranty_years": 0, "notes": [] }]
-}`,
+스토리지 예시: {"category":"storage","requirements":{"capacity":{"usable_tb":40,"controller":"Active-Active","cache_gb":128,"drive_type":"All Flash"},"custom_specs":{"protocols":["FC","iSCSI","NFS"],"features":["Snapshot","중복제거","Thin provisioning"]}}}
+네트워크 예시: {"category":"network_switch","requirements":{"custom_specs":{"layer":"L4","throughput":"6Gbps","concurrent_sessions":16000000,"ports":[{"speed":"10G SFP+","count":2}],"features":["SLB","HA Failover"]}}}
+전체구조: {"project_name":"","total_equipment_count":0,"common_requirements":{"server_type":"","processor":"","memory_spec":"","disk_spec":"","network_base":"","raid":"","power":"","management":"","security":"","warranty_years":0,"recommended_vendors":[],"constraints":[],"notes":[]},"equipment_list":[]}`,
     outputSchema: `{ "project_name": string, "total_equipment_count": number, "common_requirements": object, "equipment_list": EquipmentItem[] }`,
   },
 };
