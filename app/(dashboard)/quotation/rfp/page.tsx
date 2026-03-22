@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Upload, FileText, Loader2, ServerCog, Lightbulb, ChevronRight, ChevronLeft } from "lucide-react";
+import { Upload, FileText, Loader2, ServerCog, Lightbulb, ChevronRight, ChevronLeft, ArrowRight, X } from "lucide-react";
 import { toast } from "sonner";
 import { LoadingModal, type LoadingStep } from "@/components/ui/loading-modal";
 import { CustomerBanner } from "@/components/quotation/customer-banner";
@@ -49,6 +49,7 @@ export default function RfpPage() {
   const searchParams = useSearchParams();
   const customerId = searchParams.get("customer_id") ?? "";
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceFileRef = useRef<HTMLInputElement>(null);
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -61,6 +62,12 @@ export default function RfpPage() {
 
   const [dragOver, setDragOver] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(true);
+  const [uploadedRfp, setUploadedRfp] = useState<{
+    id: string;
+    fileName: string;
+    fileSize: number;
+    draftId: string | null;
+  } | null>(null);
 
   // RFP -> draft 연결 맵 (업로드 시 draft가 함께 생성된 경우)
   const [rfpDraftMap, setRfpDraftMap] = useState<Record<string, string>>({});
@@ -98,6 +105,13 @@ export default function RfpPage() {
         setUploadError(json.error?.message ?? "업로드에 실패했습니다.");
         return;
       }
+      // uploadedRfp 상태 설정
+      setUploadedRfp({
+        id: json.data.rfp_id,
+        fileName: json.data.file_name,
+        fileSize: json.data.file_size,
+        draftId: json.data.draft_quotation?.id ?? null,
+      });
       // draft_quotation이 응답에 포함되면 rfp→draft 연결 저장
       const rfpId = json.data.rfp_id as string | undefined;
       const draftQuotation = json.data.draft_quotation as { id: string } | undefined;
@@ -179,11 +193,34 @@ export default function RfpPage() {
     if (file) handleUpload(file);
   };
 
+  const handleDelete = async () => {
+    if (!uploadedRfp) return;
+    try {
+      await fetch(`/api/rfp/${uploadedRfp.id}`, { method: "DELETE" });
+      setUploadedRfp(null);
+      toast.success("파일이 삭제되었습니다.");
+      await fetchRfpList();
+    } catch {
+      toast.error("삭제에 실패했습니다.");
+    }
+  };
+
+  const handleReplace = async (file: File) => {
+    if (uploadedRfp) {
+      await fetch(`/api/rfp/${uploadedRfp.id}`, { method: "DELETE" });
+    }
+    await handleUpload(file);
+    toast.success("파일이 교체되었습니다.");
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) handleUpload(file);
+    if (file) {
+      if (uploadedRfp) handleReplace(file);
+      else handleUpload(file);
+    }
   };
 
   return (
@@ -214,48 +251,85 @@ export default function RfpPage() {
             </p>
           </div>
 
-          {/* 드래그앤드롭 업로드 영역 */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
-              dragOver
-                ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25 hover:border-primary/50"
-            }`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            {uploading ? (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">
-                  파일을 업로드하고 있습니다...
-                </p>
+          {/* 업로드 영역: 조건부 렌더링 */}
+          {uploadedRfp ? (
+            <div className="border rounded-lg p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="font-medium">{uploadedRfp.fileName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(uploadedRfp.fileSize / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => replaceFileRef.current?.click()}>
+                    파일 변경
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={handleDelete}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                <Upload className="h-10 w-10 text-muted-foreground" />
-                <p className="font-medium">파일을 드래그하거나 클릭하여 업로드</p>
-                <p className="text-xs text-muted-foreground">
-                  PDF 형식 지원 (최대 50MB)
-                </p>
-                <Button variant="outline" size="sm" type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
-                  파일 선택
-                </Button>
-              </div>
-            )}
-          </div>
+              <input ref={replaceFileRef} type="file" accept=".pdf" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleReplace(f); }} />
+
+              <p className="text-sm text-muted-foreground">
+                다음 단계에서 AI가 장비 요구사항을 분석합니다.
+              </p>
+              <Button onClick={() => {
+                if (uploadedRfp.draftId) router.push(`/quotation/analyze/${uploadedRfp.draftId}`);
+                else toast.error("견적 초안이 생성되지 않았습니다.");
+              }}>
+                다음 단계: 분석 화면으로 이동
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          ) : (
+            <div
+              className={`border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
+                dragOver
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25 hover:border-primary/50"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              {uploading ? (
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    파일을 업로드하고 있습니다...
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <Upload className="h-10 w-10 text-muted-foreground" />
+                  <p className="font-medium">파일을 드래그하거나 클릭하여 업로드</p>
+                  <p className="text-xs text-muted-foreground">
+                    PDF 형식 지원 (최대 50MB)
+                  </p>
+                  <Button variant="outline" size="sm" type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+                    파일 선택
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 업로드 에러 */}
           {uploadError && (
@@ -287,89 +361,126 @@ export default function RfpPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rfpList.map((rfp) => (
-                      <TableRow key={rfp.id} className="cursor-pointer" onClick={() => setSelectedRfp(rfp)}>
-                        <TableCell className="text-sm">
-                          {new Date(rfp.createdAt).toLocaleDateString("ko-KR")}
-                        </TableCell>
-                        <TableCell className="text-sm font-medium">
-                          {rfp.fileName}
-                        </TableCell>
-                        <TableCell>{statusBadge(rfp.status)}</TableCell>
-                        <TableCell>
-                          {rfp.linkedQuotationCount ? (
-                            <Badge variant="secondary">{rfp.linkedQuotationCount}건</Badge>
-                          ) : "-"}
-                        </TableCell>
-                        <TableCell className="text-right space-x-2">
-                          {rfp.status === "uploaded" && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleAnalyze(rfp.id)}
-                              disabled={analyzingId === rfp.id}
-                            >
-                              {analyzingId === rfp.id ? (
-                                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />분석 중...</>
-                              ) : (
-                                "분석 시작"
+                    {/* 현재 작업 */}
+                    {rfpList.filter(r => r.id === uploadedRfp?.id).length > 0 && (
+                      <>
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-xs text-muted-foreground font-medium bg-muted/30 py-1">현재 작업</TableCell>
+                        </TableRow>
+                        {rfpList.filter(r => r.id === uploadedRfp?.id).map(rfp => (
+                          <TableRow key={rfp.id} className="bg-primary/5 border-l-2 border-l-primary">
+                            <TableCell className="text-sm">
+                              {new Date(rfp.createdAt).toLocaleDateString("ko-KR")}
+                            </TableCell>
+                            <TableCell className="text-sm font-medium">
+                              {rfp.fileName}
+                            </TableCell>
+                            <TableCell>{statusBadge(rfp.status)}</TableCell>
+                            <TableCell>
+                              {rfp.linkedQuotationCount ? (
+                                <Badge variant="secondary">{rfp.linkedQuotationCount}건</Badge>
+                              ) : "-"}
+                            </TableCell>
+                            <TableCell className="text-right space-x-2">
+                              {uploadedRfp?.draftId && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() =>
+                                    router.push(`/quotation/analyze/${uploadedRfp.draftId}`)
+                                  }
+                                >
+                                  <ChevronRight className="h-3.5 w-3.5 mr-1" />
+                                  다음 단계
+                                </Button>
                               )}
-                            </Button>
-                          )}
-                          {/* draft가 연결된 RFP: 다음 단계 버튼 */}
-                          {rfpDraftMap[rfp.id] && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() =>
-                                router.push(`/quotation/analyze/${rfpDraftMap[rfp.id]}`)
-                              }
-                            >
-                              <ChevronRight className="h-3.5 w-3.5 mr-1" />
-                              다음 단계
-                            </Button>
-                          )}
-                          {rfp.status === "parsed" && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  router.push(`/quotation/rfp/${rfp.id}`)
-                                }
-                              >
-                                결과 보기
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  router.push(
-                                    `/quotation/configure?rfp_id=${rfp.id}&customer_id=${customerId}`
-                                  )
-                                }
-                                disabled={!customerId}
-                                title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
-                              >
-                                <ServerCog className="h-3.5 w-3.5 mr-1.5" />
-                                서버 구성
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  router.push(`/quotation/result?rfp_id=${rfp.id}&customer_id=${customerId}`)
-                                }
-                                disabled={!customerId}
-                                title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
-                              >
-                                견적 생성
-                              </Button>
-                            </>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </>
+                    )}
+
+                    {/* 이전 기록 */}
+                    {rfpList.filter(r => r.id !== uploadedRfp?.id).length > 0 && (
+                      <>
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-xs text-muted-foreground font-medium bg-muted/30 py-1">이전 기록</TableCell>
+                        </TableRow>
+                        {rfpList.filter(r => r.id !== uploadedRfp?.id).map(rfp => (
+                          <TableRow key={rfp.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedRfp(rfp)}>
+                            <TableCell className="text-sm">
+                              {new Date(rfp.createdAt).toLocaleDateString("ko-KR")}
+                            </TableCell>
+                            <TableCell className="text-sm font-medium">
+                              {rfp.fileName}
+                            </TableCell>
+                            <TableCell>{statusBadge(rfp.status)}</TableCell>
+                            <TableCell>
+                              {rfp.linkedQuotationCount ? (
+                                <Badge variant="secondary">{rfp.linkedQuotationCount}건</Badge>
+                              ) : "-"}
+                            </TableCell>
+                            <TableCell className="text-right space-x-2">
+                              {/* draft가 연결된 RFP: 다음 단계 버튼 */}
+                              {rfpDraftMap[rfp.id] && (
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/quotation/analyze/${rfpDraftMap[rfp.id]}`);
+                                  }}
+                                >
+                                  <ChevronRight className="h-3.5 w-3.5 mr-1" />
+                                  다음 단계
+                                </Button>
+                              )}
+                              {rfp.status === "parsed" && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/quotation/rfp/${rfp.id}`);
+                                    }}
+                                  >
+                                    결과 보기
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(
+                                        `/quotation/configure?rfp_id=${rfp.id}&customer_id=${customerId}`
+                                      );
+                                    }}
+                                    disabled={!customerId}
+                                    title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
+                                  >
+                                    <ServerCog className="h-3.5 w-3.5 mr-1.5" />
+                                    서버 구성
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/quotation/result?rfp_id=${rfp.id}&customer_id=${customerId}`);
+                                    }}
+                                    disabled={!customerId}
+                                    title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
+                                  >
+                                    견적 생성
+                                  </Button>
+                                </>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </>
+                    )}
                   </TableBody>
                 </Table>
               </div>
