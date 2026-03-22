@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/actions";
-import { db, quotations, quotationItems, tenants } from "@/lib/db";
+import { db, quotations, quotationItems, tenants, customers } from "@/lib/db";
 import { handleApiError } from "@/lib/errors";
 
 export async function GET(request: NextRequest) {
@@ -27,8 +27,28 @@ export async function GET(request: NextRequest) {
       : eq(quotations.tenantId, user.tenantId);
 
     const rows = await db
-      .select()
+      .select({
+        id: quotations.id,
+        tenantId: quotations.tenantId,
+        rfpId: quotations.rfpId,
+        customerId: quotations.customerId,
+        quotationNumber: quotations.quotationNumber,
+        revision: quotations.revision,
+        quotationType: quotations.quotationType,
+        status: quotations.status,
+        source: quotations.source,
+        sourceData: quotations.sourceData,
+        totalCost: quotations.totalCost,
+        totalSupply: quotations.totalSupply,
+        vat: quotations.vat,
+        totalAmount: quotations.totalAmount,
+        validityDate: quotations.validityDate,
+        createdBy: quotations.createdBy,
+        createdAt: quotations.createdAt,
+        customerName: customers.companyName,
+      })
       .from(quotations)
+      .leftJoin(customers, eq(quotations.customerId, customers.id))
       .where(whereCondition)
       .orderBy(desc(quotations.createdAt))
       .limit(100);

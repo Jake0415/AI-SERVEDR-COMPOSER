@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileText, Sheet, MessageSquareText, BookTemplate, ArrowRight, X, Trash2 } from "lucide-react";
+import { FileText, Sheet, MessageSquareText, BookTemplate, ArrowRight, X, Trash2, Play, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,8 +53,17 @@ interface DraftItem {
   quotationNumber: string;
   source: "rfp" | "excel" | "chat" | string;
   customerId: string;
+  customerName?: string;
+  status: string;
   createdAt: string;
+  updatedAt?: string;
 }
+
+const SOURCE_ICON: Record<string, { icon: typeof FileText; label: string; color: string }> = {
+  rfp: { icon: FileText, label: "RFP 기반", color: "text-blue-600" },
+  excel: { icon: Sheet, label: "엑셀", color: "text-green-600" },
+  chat: { icon: MessageSquareText, label: "AI 대화", color: "text-purple-600" },
+};
 
 export default function QuotationHubPage() {
   const router = useRouter();
@@ -117,37 +126,66 @@ export default function QuotationHubPage() {
         </p>
       </div>
 
-      {/* 작성 중인 견적 */}
+      {/* 작성 중인 견적 — 좌우 스크롤 카드 */}
       {drafts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">작성 중인 견적</CardTitle>
-            <CardDescription>이전에 작성 중이던 견적을 이어서 작성할 수 있습니다.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {drafts.map((draft) => (
-                <div key={draft.id} className="flex items-center justify-between border rounded-lg p-3">
-                  <div>
-                    <span className="font-medium">{draft.quotationNumber}</span>
-                    <span className="text-sm text-muted-foreground ml-2">
-                      {draft.source === "rfp" ? "RFP 기반" : draft.source === "excel" ? "엑셀" : draft.source === "chat" ? "AI 대화" : ""}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      {new Date(draft.createdAt).toLocaleDateString("ko-KR")}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => resumeDraft(draft)}>이어하기</Button>
-                    <Button size="sm" variant="ghost" onClick={() => deleteDraft(draft.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-base font-semibold">작성 중인 견적</h3>
+              <p className="text-sm text-muted-foreground">이전에 작성 중이던 견적을 이어서 작성할 수 있습니다.</p>
             </div>
-          </CardContent>
-        </Card>
+            <Badge variant="secondary">{drafts.length}건</Badge>
+          </div>
+          <div className="overflow-x-auto pb-2 -mx-1 px-1">
+            <div className="flex gap-4" style={{ minWidth: "min-content" }}>
+              {drafts.map((draft) => {
+                const sourceInfo = SOURCE_ICON[draft.source] ?? { icon: FileText, label: draft.source ?? "기타", color: "text-muted-foreground" };
+                const Icon = sourceInfo.icon;
+                return (
+                  <Card key={draft.id} className="shrink-0 w-72 hover:border-primary/50 transition-colors">
+                    <CardContent className="pt-4 pb-3 space-y-3">
+                      {/* 상단: 아이콘 + 타입 */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`p-1.5 rounded-md bg-muted ${sourceInfo.color}`}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-medium">{sourceInfo.label}</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">초안</Badge>
+                      </div>
+
+                      {/* 견적 정보 */}
+                      <div>
+                        <p className="font-semibold text-sm">{draft.quotationNumber}</p>
+                        {draft.customerName && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{draft.customerName}</p>
+                        )}
+                      </div>
+
+                      {/* 최종 수정일 */}
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{new Date(draft.updatedAt ?? draft.createdAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+
+                      {/* 버튼 */}
+                      <div className="flex gap-2 pt-1">
+                        <Button size="sm" className="flex-1" onClick={() => resumeDraft(draft)}>
+                          <Play className="h-3.5 w-3.5 mr-1" />
+                          재진행
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteDraft(draft.id)}>
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Step 1: 거래처 선택 */}
