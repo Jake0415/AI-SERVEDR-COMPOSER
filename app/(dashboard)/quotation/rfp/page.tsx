@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, FileText, Loader2, ServerCog, Lightbulb, ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
+import { LoadingModal, type LoadingStep } from "@/components/ui/loading-modal";
 import { CustomerBanner } from "@/components/quotation/customer-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +51,7 @@ export default function RfpPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [loadingSteps, setLoadingSteps] = useState<LoadingStep[]>([]);
 
   const [rfpList, setRfpList] = useState<RfpRecord[]>([]);
   const [listLoading, setListLoading] = useState(true);
@@ -102,19 +104,47 @@ export default function RfpPage() {
   // AI 분석 시작
   const handleAnalyze = async (rfpId: string) => {
     setAnalyzingId(rfpId);
+    setLoadingSteps([
+      { label: "PDF 텍스트 추출", status: "in_progress" },
+      { label: "AI 장비 요구사항 분석", status: "pending" },
+      { label: "분석 결과 저장", status: "pending" },
+    ]);
     try {
+      // 1초 후 2단계로 전환 (텍스트 추출은 빠르므로)
+      const stepTimer = window.setTimeout(() => {
+        setLoadingSteps([
+          { label: "PDF 텍스트 추출", status: "completed" },
+          { label: "AI 장비 요구사항 분석", status: "in_progress" },
+          { label: "분석 결과 저장", status: "pending" },
+        ]);
+      }, 1500);
+
       const res = await fetch(`/api/rfp/${rfpId}/analyze`, { method: "POST" });
+      clearTimeout(stepTimer);
+
       const json = await res.json();
       if (!json.success) {
+        setLoadingSteps((prev) => prev.map((s) => s.status === "in_progress" ? { ...s, status: "error" } : s));
         toast.error(json.error?.message ?? "분석에 실패했습니다.");
         return;
       }
-      toast.success(`${json.data.config_count ?? 0}개 서버 구성이 추출되었습니다.`);
+
+      // 3단계: 저장 완료
+      setLoadingSteps([
+        { label: "PDF 텍스트 추출", status: "completed" },
+        { label: "AI 장비 요구사항 분석", status: "completed" },
+        { label: "분석 결과 저장", status: "completed" },
+      ]);
+      await new Promise((r) => window.setTimeout(r, 500));
+
+      toast.success(`${json.data.config_count ?? 0}개 장비가 추출되었습니다.`);
       await fetchRfpList();
     } catch {
+      setLoadingSteps((prev) => prev.map((s) => s.status === "in_progress" ? { ...s, status: "error" } : s));
       toast.error("AI 분석 중 오류가 발생했습니다.");
     } finally {
       setAnalyzingId(null);
+      setLoadingSteps([]);
     }
   };
 
@@ -132,6 +162,14 @@ export default function RfpPage() {
 
   return (
     <div className="space-y-6">
+      {/* AI 분석 로딩 모달 */}
+      <LoadingModal
+        open={!!analyzingId}
+        title="RFP 분석 중"
+        description="AI가 RFP 문서에서 장비 요구사항을 추출하고 있습니다. 약 30초~1분 소요됩니다."
+        steps={loadingSteps}
+      />
+
       {/* 거래처 배너 */}
       {customerId && <CustomerBanner customerId={customerId} />}
 
