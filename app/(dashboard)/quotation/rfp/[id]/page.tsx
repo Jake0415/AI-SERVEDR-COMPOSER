@@ -247,25 +247,39 @@ export default function RfpDetailPage() {
                       {equip.purpose && <p className="text-sm text-muted-foreground mb-2">용도: {String(equip.purpose)}</p>}
 
                       {req && (() => {
-                        const desc = (obj: unknown): string => {
-                          if (!obj) return "";
-                          const o = obj as Record<string, unknown>;
-                          return o.description ? String(o.description) : JSON.stringify(obj);
-                        };
-                        const netDesc = (arr: unknown): string => {
-                          if (!Array.isArray(arr)) return JSON.stringify(arr);
-                          return (arr as Record<string, unknown>[]).map(n => n.description ? String(n.description) : `${String(n.speed ?? "")} ${String(n.type ?? "")} x${String(n.ports ?? "")}`).join(", ");
+                        // 객체/배열을 사람이 읽기 쉽게 변환
+                        const pretty = (val: unknown): string => {
+                          if (!val) return "";
+                          if (typeof val === "string") return val;
+                          if (typeof val === "number" || typeof val === "boolean") return String(val);
+                          const o = val as Record<string, unknown>;
+                          if (o.description) return String(o.description);
+                          if (Array.isArray(val)) {
+                            return (val as Record<string, unknown>[]).map(item => {
+                              if (typeof item === "string") return item;
+                              const i = item as Record<string, unknown>;
+                              if (i.description) return String(i.description);
+                              // ports 배열: {speed, count} → "10G SFP+ x2"
+                              if (i.speed && i.count) return `${String(i.speed)} x${String(i.count)}`;
+                              // 일반 배열 항목
+                              if (i.type && i.ports) return `${String(i.speed ?? "")} ${String(i.type)} x${String(i.ports)}`;
+                              return JSON.stringify(item);
+                            }).join(", ");
+                          }
+                          // 단순 객체: key=value 나열
+                          if (o.name) return String(o.name);
+                          return JSON.stringify(val);
                         };
                         return (
                         <div className="text-xs text-muted-foreground space-y-0.5">
-                          {req.cpu ? <p><span className="font-medium">CPU:</span> {desc(req.cpu)}</p> : null}
-                          {req.memory ? <p><span className="font-medium">메모리:</span> {desc(req.memory)}</p> : null}
-                          {req.storage ? <p><span className="font-medium">스토리지:</span> {Array.isArray(req.storage) ? (req.storage as Record<string,unknown>[]).map(s => s.description ? String(s.description) : JSON.stringify(s)).join(", ") : JSON.stringify(req.storage)}</p> : null}
-                          {req.network ? <p><span className="font-medium">네트워크:</span> {netDesc(req.network)}</p> : null}
-                          {req.hba ? <p><span className="font-medium">HBA:</span> {desc(req.hba)}</p> : null}
-                          {req.power ? <p><span className="font-medium">전원:</span> {desc(req.power)}</p> : null}
-                          {req.os ? <p><span className="font-medium">OS:</span> {String(req.os as string)}</p> : null}
-                          {req.form_factor ? <p><span className="font-medium">폼팩터:</span> {String(req.form_factor as string)}</p> : null}
+                          {req.cpu ? <p><span className="font-medium">CPU:</span> {pretty(req.cpu)}</p> : null}
+                          {req.memory ? <p><span className="font-medium">메모리:</span> {pretty(req.memory)}</p> : null}
+                          {req.storage ? <p><span className="font-medium">스토리지:</span> {pretty(req.storage)}</p> : null}
+                          {req.network ? <p><span className="font-medium">네트워크:</span> {pretty(req.network)}</p> : null}
+                          {req.hba ? <p><span className="font-medium">HBA:</span> {pretty(req.hba)}</p> : null}
+                          {req.power ? <p><span className="font-medium">전원:</span> {pretty(req.power)}</p> : null}
+                          {req.os ? <p><span className="font-medium">OS:</span> {pretty(req.os)}</p> : null}
+                          {req.form_factor ? <p><span className="font-medium">폼팩터:</span> {pretty(req.form_factor)}</p> : null}
 
                           {/* 스토리지 capacity */}
                           {req.capacity ? (() => {
@@ -287,7 +301,22 @@ export default function RfpDetailPage() {
                                 <p className="font-medium text-foreground">상세 스펙:</p>
                                 {Object.entries(specs).map(([k, v]) => {
                                   if (!v || (Array.isArray(v) && (v as unknown[]).length === 0) || v === "") return null;
-                                  const d: string = Array.isArray(v) ? (v as unknown[]).map(String).join(", ") : typeof v === "object" ? JSON.stringify(v) : String(v);
+                                  let d: string;
+                                  if (Array.isArray(v)) {
+                                    d = (v as unknown[]).map(item => {
+                                      if (typeof item === "string") return item;
+                                      const o = item as Record<string, unknown>;
+                                      if (o.speed && o.count) return `${String(o.speed)} x${String(o.count)}`;
+                                      if (o.lcd_size) return `LCD ${String(o.lcd_size)}, KVM ${String(o.kvm_ports ?? "")}포트`;
+                                      return String(item);
+                                    }).join(", ");
+                                  } else if (typeof v === "object") {
+                                    const o = v as Record<string, unknown>;
+                                    if (o.lcd_size) d = `LCD ${String(o.lcd_size)}, KVM ${String(o.kvm_ports ?? "")}포트, USB ${String(o.usb_adapters ?? "")}EA`;
+                                    else d = Object.entries(o).map(([sk, sv]) => `${sk}: ${String(sv)}`).join(", ");
+                                  } else {
+                                    d = String(v);
+                                  }
                                   return <p key={k}><span className="font-medium">{k}:</span> {d}</p>;
                                 })}
                               </div>
