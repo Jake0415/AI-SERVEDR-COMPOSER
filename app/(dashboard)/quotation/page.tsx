@@ -53,6 +53,7 @@ interface DraftItem {
   quotationNumber: string;
   source: "rfp" | "excel" | "chat" | string;
   customerId: string;
+  rfpId: string | null;
   customerName?: string;
   status: string;
   createdAt: string;
@@ -87,7 +88,22 @@ export default function QuotationHubPage() {
     fetchDrafts();
   }, [fetchDrafts]);
 
-  const resumeDraft = (draft: DraftItem) => {
+  const resumeDraft = async (draft: DraftItem) => {
+    // RFP 기반이고 rfpId가 있으면 RFP 상태 확인
+    if (draft.source === "rfp" && draft.rfpId) {
+      try {
+        const res = await fetch(`/api/rfp/${draft.rfpId}`);
+        const json = await res.json();
+        if (json.success && json.data?.status === "uploaded") {
+          // 파일만 업로드됨 → 업로드 화면으로
+          router.push(`/quotation/rfp?customer_id=${draft.customerId}`);
+          return;
+        }
+      } catch {
+        // API 실패 시 분석 화면으로 이동
+      }
+    }
+    // 분석 완료 또는 엑셀/AI → 분석 화면으로
     router.push(`/quotation/analyze/${draft.id}`);
   };
 

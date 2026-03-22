@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface RfpRecord {
   id: string;
@@ -24,6 +25,7 @@ interface RfpRecord {
   status: string;
   createdAt: string;
   linkedQuotationCount?: number;
+  parsedRequirements?: Record<string, unknown>;
 }
 
 /** RFP 상태별 Badge variant 매핑 */
@@ -55,6 +57,7 @@ export default function RfpPage() {
 
   const [rfpList, setRfpList] = useState<RfpRecord[]>([]);
   const [listLoading, setListLoading] = useState(true);
+  const [selectedRfp, setSelectedRfp] = useState<RfpRecord | null>(null);
 
   const [dragOver, setDragOver] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(true);
@@ -285,7 +288,7 @@ export default function RfpPage() {
                   </TableHeader>
                   <TableBody>
                     {rfpList.map((rfp) => (
-                      <TableRow key={rfp.id}>
+                      <TableRow key={rfp.id} className="cursor-pointer" onClick={() => setSelectedRfp(rfp)}>
                         <TableCell className="text-sm">
                           {new Date(rfp.createdAt).toLocaleDateString("ko-KR")}
                         </TableCell>
@@ -372,6 +375,101 @@ export default function RfpPage() {
               </div>
             )}
           </div>
+
+          {/* RFP 상태 팝업 */}
+          <Dialog open={!!selectedRfp} onOpenChange={() => setSelectedRfp(null)}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  {selectedRfp?.fileName}
+                </DialogTitle>
+              </DialogHeader>
+              {selectedRfp && (
+                <div className="space-y-4">
+                  {/* 기본 정보 */}
+                  <div className="rounded-lg border p-3 space-y-1.5 text-sm">
+                    <p><span className="text-muted-foreground">파일명:</span> {selectedRfp.fileName}</p>
+                    <p><span className="text-muted-foreground">업로드일:</span> {new Date(selectedRfp.createdAt).toLocaleString("ko-KR")}</p>
+                  </div>
+
+                  {/* 처리 상태 */}
+                  <div className="rounded-lg border p-3 space-y-2">
+                    <p className="font-medium text-sm">처리 상태</p>
+                    <div className="space-y-1.5 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-600">✅</span>
+                        <span>파일 업로드</span>
+                        <span className="text-muted-foreground ml-auto">완료</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {selectedRfp.status === "uploaded" ? (
+                          <><span className="text-muted-foreground">○</span><span>AI 분석</span><span className="text-muted-foreground ml-auto">대기</span></>
+                        ) : selectedRfp.status === "parsing" ? (
+                          <><span className="text-blue-600">⟳</span><span>AI 분석</span><span className="text-blue-600 ml-auto">진행 중</span></>
+                        ) : selectedRfp.status === "parsed" ? (
+                          <><span className="text-green-600">✅</span><span>AI 분석</span><span className="text-muted-foreground ml-auto">완료</span></>
+                        ) : (
+                          <><span className="text-red-600">❌</span><span>AI 분석</span><span className="text-red-600 ml-auto">실패</span></>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {selectedRfp.status === "parsed" ? (
+                          <><span className="text-green-600">✅</span><span>장비 추출</span>
+                            <span className="text-muted-foreground ml-auto">
+                              {selectedRfp.parsedRequirements
+                                ? `${(selectedRfp.parsedRequirements as Record<string,unknown>)?.equipment_list
+                                  ? ((selectedRfp.parsedRequirements as Record<string,unknown>).equipment_list as unknown[]).length
+                                  : 0}개 장비`
+                                : "완료"}
+                            </span>
+                          </>
+                        ) : (
+                          <><span className="text-muted-foreground">○</span><span>장비 추출</span><span className="text-muted-foreground ml-auto">대기</span></>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 연결 견적 */}
+                  <div className="rounded-lg border p-3 space-y-1.5 text-sm">
+                    <p className="font-medium">연결 견적</p>
+                    <p className="text-muted-foreground">
+                      {selectedRfp.linkedQuotationCount && selectedRfp.linkedQuotationCount > 0
+                        ? `${selectedRfp.linkedQuotationCount}건의 견적이 연결되어 있습니다.`
+                        : "연결된 견적이 없습니다."}
+                    </p>
+                  </div>
+
+                  {/* 장비 요약 (parsed일 때만) */}
+                  {selectedRfp.status === "parsed" && selectedRfp.parsedRequirements && (() => {
+                    const pr = selectedRfp.parsedRequirements as Record<string, unknown>;
+                    const eqList = (pr.equipment_list ?? []) as Array<Record<string, unknown>>;
+                    // 카테고리별 그룹핑
+                    const groups: Record<string, { count: number; totalQty: number; names: string[] }> = {};
+                    for (const eq of eqList) {
+                      const cat = String(eq.category ?? "other");
+                      if (!groups[cat]) groups[cat] = { count: 0, totalQty: 0, names: [] };
+                      groups[cat].count++;
+                      groups[cat].totalQty += Number(eq.quantity ?? 1);
+                      groups[cat].names.push(String(eq.name ?? ""));
+                    }
+                    return (
+                      <div className="rounded-lg border p-3 space-y-1.5 text-sm">
+                        <p className="font-medium">추출 장비 요약</p>
+                        {Object.entries(groups).map(([cat, g]) => (
+                          <p key={cat}>
+                            <span className="text-muted-foreground">{cat}:</span> {g.count}종 {g.totalQty}대
+                            <span className="text-xs text-muted-foreground ml-1">({g.names.slice(0, 3).join(", ")}{g.names.length > 3 ? "..." : ""})</span>
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* 오른쪽: 작성 팁 사이드바 (페이지 전체 높이) */}
