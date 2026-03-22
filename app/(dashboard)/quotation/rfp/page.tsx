@@ -258,6 +258,15 @@ export default function RfpPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() =>
+                                  router.push(`/quotation/rfp/${rfp.id}`)
+                                }
+                              >
+                                결과 보기
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
                                   router.push(
                                     `/quotation/configure?rfp_id=${rfp.id}&customer_id=${customerId}`
                                   )

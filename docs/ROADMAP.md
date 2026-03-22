@@ -828,6 +828,11 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
   - RFP 업로드 시 draft 자동 생성 + rfpId 연결
   - RFP 이력에 연결된 견적 수 표시
 
+### Phase 15: RFP 분석 결과 뷰어 + 장비 매칭
+
+- ⏳ **Task 102: RFP 분석 결과 Pretty/JSON 뷰어**
+- ⏳ **Task 103: 장비 매칭 API + 추천 제품 UI**
+
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
