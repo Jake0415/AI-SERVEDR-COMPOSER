@@ -88,20 +88,7 @@ export default function QuotationHubPage() {
   }, [fetchDrafts]);
 
   const resumeDraft = (draft: DraftItem) => {
-    const customerId = draft.customerId;
-    switch (draft.source) {
-      case "rfp":
-        router.push(`/quotation/rfp?customer_id=${customerId}&draft_id=${draft.id}`);
-        break;
-      case "excel":
-        router.push(`/quotation/excel?customer_id=${customerId}&draft_id=${draft.id}`);
-        break;
-      case "chat":
-        router.push(`/quotation/chat?customer_id=${customerId}&draft_id=${draft.id}`);
-        break;
-      default:
-        router.push(`/quotation/result?customer_id=${customerId}`);
-    }
+    router.push(`/quotation/analyze/${draft.id}`);
   };
 
   const deleteDraft = async (id: string) => {

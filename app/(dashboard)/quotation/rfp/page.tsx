@@ -59,6 +59,9 @@ export default function RfpPage() {
   const [dragOver, setDragOver] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(true);
 
+  // RFP -> draft 연결 맵 (업로드 시 draft가 함께 생성된 경우)
+  const [rfpDraftMap, setRfpDraftMap] = useState<Record<string, string>>({});
+
   // RFP 이력 조회 (customer_id 필터링)
   const fetchRfpList = useCallback(async () => {
     try {
@@ -91,6 +94,12 @@ export default function RfpPage() {
       if (!json.success) {
         setUploadError(json.error?.message ?? "업로드에 실패했습니다.");
         return;
+      }
+      // draft_quotation이 응답에 포함되면 rfp→draft 연결 저장
+      const rfpId = json.data.rfp_id as string | undefined;
+      const draftQuotation = json.data.draft_quotation as { id: string } | undefined;
+      if (rfpId && draftQuotation?.id) {
+        setRfpDraftMap((prev) => ({ ...prev, [rfpId]: draftQuotation.id }));
       }
       toast.success("파일이 업로드되었습니다.");
       await fetchRfpList();
@@ -302,6 +311,19 @@ export default function RfpPage() {
                               ) : (
                                 "분석 시작"
                               )}
+                            </Button>
+                          )}
+                          {/* draft가 연결된 RFP: 다음 단계 버튼 */}
+                          {rfpDraftMap[rfp.id] && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() =>
+                                router.push(`/quotation/analyze/${rfpDraftMap[rfp.id]}`)
+                              }
+                            >
+                              <ChevronRight className="h-3.5 w-3.5 mr-1" />
+                              다음 단계
                             </Button>
                           )}
                           {rfp.status === "parsed" && (
