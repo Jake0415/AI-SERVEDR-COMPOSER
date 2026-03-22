@@ -1,14 +1,10 @@
 // ============================================================
-// POST /api/rfp/upload — RFP 파일 업로드 & AI 파싱
+// POST /api/rfp/upload — RFP 파일 업로드 (파일 저장만)
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq, sql } from "drizzle-orm";
-import { analyzeRfpDocument } from "@/lib/ai/rfp-analyzer";
 import { getCurrentUser } from "@/lib/auth/actions";
-import { db, rfpDocuments, quotations, tenants } from "@/lib/db";
-import { extractTextFromPdf } from "@/lib/parsers/pdf-parser";
-import { extractTextFromDocx } from "@/lib/parsers/docx-parser";
+import { db, rfpDocuments } from "@/lib/db";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -65,7 +61,7 @@ export async function POST(request: NextRequest) {
     const filePath = path.join(userDir, fileName);
     await writeFile(filePath, fileBuffer);
 
-    // DB에 RFP 레코드 생성 (status: parsing)
+    // DB에 RFP 레코드 생성 (status: uploaded)
     const [rfpRecord] = await db
       .insert(rfpDocuments)
       .values({
@@ -74,67 +70,9 @@ export async function POST(request: NextRequest) {
         customerId: customerId || undefined,
         fileName: file.name,
         fileUrl: filePath,
-        status: "parsing",
+        status: "uploaded",
       })
       .returning();
-
-    // 텍스트 추출
-    const text = await extractTextFromFile(file.type, fileBuffer);
-
-    if (!text.trim()) {
-      await db
-        .update(rfpDocuments)
-        .set({ status: "error" })
-        .where(eq(rfpDocuments.id, rfpRecord.id));
-
-      return NextResponse.json(
-        { success: false, error: { code: "EMPTY_CONTENT", message: "파일에서 텍스트를 추출할 수 없습니다." } },
-        { status: 422 },
-      );
-    }
-
-    // AI 파싱
-    const configs = await analyzeRfpDocument(text);
-
-    // 파싱 결과 저장
-    await db
-      .update(rfpDocuments)
-      .set({ parsedRequirements: configs, status: "parsed" })
-      .where(eq(rfpDocuments.id, rfpRecord.id));
-
-    // Draft 견적 자동 생성
-    const [tenant] = await db.select({ quotationPrefix: tenants.quotationPrefix })
-      .from(tenants).where(eq(tenants.id, user.tenantId)).limit(1);
-    const prefix = tenant?.quotationPrefix ?? "QT";
-    const today = new Date();
-    const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
-    const [countResult] = await db.select({ count: sql<number>`count(*)` })
-      .from(quotations).where(eq(quotations.tenantId, user.tenantId));
-    const seq = String((countResult?.count ?? 0) + 1).padStart(3, "0");
-    const quotationNumber = `${prefix}-${dateStr}-${seq}`;
-
-    // customerId가 없으면 draft 생성 생략 (필수 필드)
-    let draft: { id: string; quotationNumber: string } | null = null;
-    if (customerId) {
-      const defaultValidityDate = new Date(today.getTime() + 30 * 86400000)
-        .toISOString()
-        .slice(0, 10);
-
-      const [draftRow] = await db.insert(quotations).values({
-        tenantId: user.tenantId,
-        rfpId: rfpRecord.id,
-        customerId,
-        quotationNumber,
-        revision: 1,
-        quotationType: "standard",
-        status: "draft",
-        source: "rfp",
-        sourceData: { rfp_file: fileName, parsed_configs: configs },
-        validityDate: defaultValidityDate,
-        createdBy: user.id,
-      }).returning({ id: quotations.id, quotationNumber: quotations.quotationNumber });
-      draft = draftRow ?? null;
-    }
 
     return NextResponse.json({
       success: true,
@@ -142,27 +80,13 @@ export async function POST(request: NextRequest) {
         rfp_id: rfpRecord.id,
         file_name: file.name,
         file_size: file.size,
-        parsed_configs: configs,
-        config_count: configs.length,
-        draft_quotation: draft ?? null,
       },
     });
   } catch (error) {
     console.error("[API Error] /api/rfp/upload", error instanceof Error ? error.message : error);
     return NextResponse.json(
-      { success: false, error: { code: "PARSING_ERROR", message: "파일 처리 중 오류가 발생했습니다." } },
+      { success: false, error: { code: "UPLOAD_ERROR", message: "파일 업로드 중 오류가 발생했습니다." } },
       { status: 500 },
     );
   }
-}
-
-/** 파일 형식에 따른 텍스트 추출 */
-async function extractTextFromFile(fileType: string, buffer: Buffer): Promise<string> {
-  if (fileType === "application/pdf") {
-    return extractTextFromPdf(buffer);
-  }
-  if (fileType.includes("wordprocessingml") || fileType === "application/msword") {
-    return extractTextFromDocx(buffer);
-  }
-  throw new Error(`지원하지 않는 파일 형식: ${fileType}`);
 }

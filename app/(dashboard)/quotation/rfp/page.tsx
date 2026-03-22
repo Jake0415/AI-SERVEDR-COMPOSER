@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Upload, FileText, Loader2, Server, ServerCog, Lightbulb, ChevronRight, ChevronLeft } from "lucide-react";
+import { Upload, FileText, Loader2, ServerCog, Lightbulb, ChevronRight, ChevronLeft } from "lucide-react";
+import { toast } from "sonner";
 import { CustomerBanner } from "@/components/quotation/customer-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -16,29 +16,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ParsedServerConfig } from "@/lib/types";
 
 interface RfpRecord {
   id: string;
   fileName: string;
   status: string;
   createdAt: string;
-  parsedRequirements: ParsedServerConfig[] | null;
   linkedQuotationCount?: number;
-}
-
-interface UploadResult {
-  rfp_id: string;
-  file_name: string;
-  parsed_configs: ParsedServerConfig[];
-  config_count: number;
 }
 
 /** RFP 상태별 Badge variant 매핑 */
 function statusBadge(status: string) {
   switch (status) {
     case "uploaded":
-      return <Badge variant="secondary">업로드됨</Badge>;
+      return <Badge variant="outline">업로드됨</Badge>;
     case "parsing":
       return <Badge variant="outline">파싱중</Badge>;
     case "parsed":
@@ -57,8 +48,8 @@ export default function RfpPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [uploading, setUploading] = useState(false);
-  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
 
   const [rfpList, setRfpList] = useState<RfpRecord[]>([]);
   const [listLoading, setListLoading] = useState(true);
@@ -88,33 +79,42 @@ export default function RfpPage() {
   // 파일 업로드 처리
   const handleUpload = async (file: File) => {
     setUploading(true);
-    setUploadResult(null);
     setUploadError(null);
-
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("customer_id", customerId);
-
-      const res = await fetch("/api/rfp/upload", {
-        method: "POST",
-        body: formData,
-      });
-
+      if (customerId) formData.append("customer_id", customerId);
+      const res = await fetch("/api/rfp/upload", { method: "POST", body: formData });
       const json = await res.json();
-
       if (!json.success) {
         setUploadError(json.error?.message ?? "업로드에 실패했습니다.");
         return;
       }
-
-      setUploadResult(json.data);
-      // 이력 새로고침
+      toast.success("파일이 업로드되었습니다.");
       await fetchRfpList();
     } catch {
       setUploadError("업로드 중 오류가 발생했습니다.");
     } finally {
       setUploading(false);
+    }
+  };
+
+  // AI 분석 시작
+  const handleAnalyze = async (rfpId: string) => {
+    setAnalyzingId(rfpId);
+    try {
+      const res = await fetch(`/api/rfp/${rfpId}/analyze`, { method: "POST" });
+      const json = await res.json();
+      if (!json.success) {
+        toast.error(json.error?.message ?? "분석에 실패했습니다.");
+        return;
+      }
+      toast.success(`${json.data.config_count ?? 0}개 서버 구성이 추출되었습니다.`);
+      await fetchRfpList();
+    } catch {
+      toast.error("AI 분석 중 오류가 발생했습니다.");
+    } finally {
+      setAnalyzingId(null);
     }
   };
 
@@ -173,7 +173,7 @@ export default function RfpPage() {
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">
-                  파일을 분석하고 있습니다... AI가 서버 사양을 추출 중입니다.
+                  파일을 업로드하고 있습니다...
                 </p>
               </div>
             ) : (
@@ -194,82 +194,6 @@ export default function RfpPage() {
           {uploadError && (
             <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
               <p className="text-sm text-destructive">{uploadError}</p>
-            </div>
-          )}
-
-          {/* 파싱 결과 */}
-          {uploadResult && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">
-                파싱 결과 — {uploadResult.config_count}개 서버 구성 발견
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {uploadResult.parsed_configs.map((config, idx) => (
-                  <Card key={idx}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Server className="h-4 w-4" />
-                        {config.config_name}
-                        <Badge variant="secondary" className="ml-auto">
-                          x{config.quantity}
-                        </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-1 text-sm">
-                      {config.requirements.cpu && (
-                        <p>
-                          <span className="text-muted-foreground">CPU:</span>{" "}
-                          {config.requirements.cpu.min_cores}코어 이상
-                          {config.requirements.cpu.min_clock_ghz
-                            ? `, ${config.requirements.cpu.min_clock_ghz}GHz+`
-                            : ""}
-                        </p>
-                      )}
-                      {config.requirements.memory && (
-                        <p>
-                          <span className="text-muted-foreground">메모리:</span>{" "}
-                          {config.requirements.memory.min_capacity_gb}GB 이상
-                          {config.requirements.memory.type
-                            ? ` (${config.requirements.memory.type})`
-                            : ""}
-                        </p>
-                      )}
-                      {config.requirements.storage && (
-                        <p>
-                          <span className="text-muted-foreground">스토리지:</span>{" "}
-                          {config.requirements.storage.items
-                            .map(
-                              (s) =>
-                                `${s.type} ${s.min_capacity_gb}GB x${s.quantity}`
-                            )
-                            .join(", ")}
-                        </p>
-                      )}
-                      {config.requirements.gpu && (
-                        <p>
-                          <span className="text-muted-foreground">GPU:</span>{" "}
-                          {config.requirements.gpu.min_vram_gb}GB VRAM x
-                          {config.requirements.gpu.min_count}
-                        </p>
-                      )}
-                      {config.notes.length > 0 && (
-                        <p className="text-muted-foreground text-xs mt-2">
-                          참고: {config.notes.join(", ")}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              <Button
-                onClick={() =>
-                  router.push(`/quotation/result?rfp_id=${uploadResult.rfp_id}&customer_id=${customerId}`)
-                }
-                disabled={!customerId}
-                title={!customerId ? "견적 허브에서 거래처를 먼저 선택하세요" : undefined}
-              >
-                이 RFP로 견적 생성
-              </Button>
             </div>
           )}
 
@@ -311,6 +235,20 @@ export default function RfpPage() {
                           ) : "-"}
                         </TableCell>
                         <TableCell className="text-right space-x-2">
+                          {rfp.status === "uploaded" && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleAnalyze(rfp.id)}
+                              disabled={analyzingId === rfp.id}
+                            >
+                              {analyzingId === rfp.id ? (
+                                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />분석 중...</>
+                              ) : (
+                                "분석 시작"
+                              )}
+                            </Button>
+                          )}
                           {rfp.status === "parsed" && (
                             <>
                               <Button
