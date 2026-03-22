@@ -77,8 +77,12 @@ export async function POST(
       );
     }
 
-    // AI 파싱
-    const configs = await analyzeRfpDocument(text, user.tenantId);
+    // AI 파싱 (2단계: 장비 목록 → 장비별 상세)
+    const configs = await analyzeRfpDocument(text, user.tenantId, (progress) => {
+      console.log(
+        `[RFP Analyze] ${progress.step}: ${progress.current}/${progress.total} ${progress.equipment_name ?? ""}`,
+      );
+    });
 
     // 결과 저장
     await db

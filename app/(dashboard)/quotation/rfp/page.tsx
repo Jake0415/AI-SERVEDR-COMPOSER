@@ -101,26 +101,39 @@ export default function RfpPage() {
     }
   };
 
-  // AI 분석 시작
+  // AI 분석 시작 (2단계 순차 호출)
   const handleAnalyze = async (rfpId: string) => {
     setAnalyzingId(rfpId);
     setLoadingSteps([
       { label: "PDF 텍스트 추출", status: "in_progress" },
-      { label: "AI 장비 요구사항 분석", status: "pending" },
-      { label: "분석 결과 저장", status: "pending" },
+      { label: "장비 목록 추출 (AI 1차 분석)", status: "pending" },
+      { label: "장비별 상세 스펙 추출 (AI 2차 분석)", status: "pending" },
+      { label: "결과 저장", status: "pending" },
     ]);
     try {
-      // 1초 후 2단계로 전환 (텍스트 추출은 빠르므로)
-      const stepTimer = window.setTimeout(() => {
+      // 2초 후: 1차 분석 단계로 전환
+      const timer1 = window.setTimeout(() => {
         setLoadingSteps([
           { label: "PDF 텍스트 추출", status: "completed" },
-          { label: "AI 장비 요구사항 분석", status: "in_progress" },
-          { label: "분석 결과 저장", status: "pending" },
+          { label: "장비 목록 추출 (AI 1차 분석)", status: "in_progress" },
+          { label: "장비별 상세 스펙 추출 (AI 2차 분석)", status: "pending" },
+          { label: "결과 저장", status: "pending" },
         ]);
-      }, 1500);
+      }, 2000);
+
+      // 10초 후: 2차 분석 단계로 전환 (1차는 보통 5~10초)
+      const timer2 = window.setTimeout(() => {
+        setLoadingSteps([
+          { label: "PDF 텍스트 추출", status: "completed" },
+          { label: "장비 목록 추출 (AI 1차 분석)", status: "completed" },
+          { label: "장비별 상세 스펙 추출 중... (약 1~2분 소요)", status: "in_progress" },
+          { label: "결과 저장", status: "pending" },
+        ]);
+      }, 10000);
 
       const res = await fetch(`/api/rfp/${rfpId}/analyze`, { method: "POST" });
-      clearTimeout(stepTimer);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
 
       const json = await res.json();
       if (!json.success) {
@@ -129,11 +142,12 @@ export default function RfpPage() {
         return;
       }
 
-      // 3단계: 저장 완료
+      // 완료
       setLoadingSteps([
         { label: "PDF 텍스트 추출", status: "completed" },
-        { label: "AI 장비 요구사항 분석", status: "completed" },
-        { label: "분석 결과 저장", status: "completed" },
+        { label: "장비 목록 추출 (AI 1차 분석)", status: "completed" },
+        { label: "장비별 상세 스펙 추출 (AI 2차 분석)", status: "completed" },
+        { label: "결과 저장", status: "completed" },
       ]);
       await new Promise((r) => window.setTimeout(r, 500));
 
