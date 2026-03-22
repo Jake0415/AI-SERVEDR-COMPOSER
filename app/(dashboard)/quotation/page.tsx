@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileText, Sheet, MessageSquareText, BookTemplate, ArrowRight, X, Trash2, Play, Clock } from "lucide-react";
+import { FileText, Sheet, MessageSquareText, ArrowRight, X, Trash2, Play, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -274,25 +274,6 @@ export default function QuotationHubPage() {
             </div>
           );
         })}
-      </div>
-
-      <div className="border rounded-lg p-6 bg-muted/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-              <BookTemplate className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="font-medium">템플릿에서 시작</p>
-              <p className="text-sm text-muted-foreground">
-                이전에 저장한 서버 구성 템플릿으로 빠르게 견적을 생성합니다.
-              </p>
-            </div>
-          </div>
-          <Button variant="outline" disabled>
-            준비 중
-          </Button>
-        </div>
       </div>
     </div>
   );
