@@ -830,11 +830,30 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
 
 ### Phase 15: RFP 분석 결과 뷰어 + 장비 매칭
 
-- ⏳ **Task 102: RFP 분석 결과 Pretty/JSON 뷰어**
-- ⏳ **Task 103: 장비 매칭 API + 추천 제품 UI**
+- ✅ **Task 102: RFP 분석 결과 Pretty/JSON 뷰어**
+  - /quotation/rfp/[id] 상세 페이지 (Pretty 뷰 + JSON 편집 탭)
+  - PUT /api/rfp/[id]/requirements — JSON 수정 저장
+- ✅ **Task 103: 장비 매칭 API + 추천 제품 UI**
+  - POST /api/rfp/[id]/match — parts + equipment_products 매칭
+  - 매칭 결과 카드 UI
+- ✅ **Task 104: RFP 파싱 프롬프트 개선**
+  - 장비 유형별 상세 JSON 예시 (스토리지/네트워크/SAN/랙/어플라이언스)
+  - common_requirements 필수 추출, constraints/recommendations 빈 배열 금지
+
+### Phase 16: UX 개선 — 로딩 모달 + 에러 수정
+
+- ✅ **Task 105: 공통 로딩 모달 컴포넌트**
+  - components/ui/loading-modal.tsx (딤 + 단계별 진행 표시)
+  - RFP 분석 시 3단계 로딩 모달 적용
+- ✅ **Task 106: RFP 분석 에러 수정**
+  - 파일 경로 절대 변환 (path.resolve)
+  - 프롬프트 rfp-analyzer → rfp-equipment-parser
+  - maxTokens 16384 + JSON 잘림 복구, 업로드/분석 2단계 분리
+- ✅ **Task 107: RFP 조회 SQL 에러 수정**
+  - ANY() → inArray() 변경, linkedQuotationCount 반환
 
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- 완료율: 86/88 = ~98% (미완료 2건: Phase 7 위저드 070-B/070-C)
+- 완료율: 93/95 = ~98% (미완료 2건: Phase 7 위저드 070-B/070-C)
