@@ -852,8 +852,31 @@ AI-SERVER-COMPOSER는 서버/IT인프라를 조합하여 납품하는 사내 영
 - ✅ **Task 107: RFP 조회 SQL 에러 수정**
   - ANY() → inArray() 변경, linkedQuotationCount 반환
 
+### Phase 17: RFP 분석 2단계 순차 호출
+
+> LLM 단일 호출 → 2단계 순차 호출로 정확도 향상 (마크다운 변환 + summary + detail)
+
+- ⏳ **Task 108: 프롬프트 2개 생성 (summary + detail)**
+  - rfp-equipment-summary: 장비 목록 + 공통 요건만 추출 (1차, 빠름)
+  - rfp-equipment-detail: 장비별 상세 스펙 추출 (2차, 카테고리별 JSON 스키마)
+  - seed-data.mjs + default-prompts.ts 모두 적용
+
+- ⏳ **Task 109: rfp-analyzer.ts 2단계 호출 리팩터링**
+  - 1차 호출: 장비 목록 + 공통 요건 (maxTokens 4096)
+  - 2차 호출: 장비별 개별 호출 (장비당 maxTokens 4096)
+  - onProgress 콜백으로 진행 상황 전달
+
+- ⏳ **Task 110: analyze API 수정**
+  - 동기 API 유지, onProgress는 서버 로깅용
+  - 응답에 step_count 반환
+
+- ⏳ **Task 111: FE 로딩 모달 4단계 확장**
+  - 텍스트 추출 → 장비 목록 (1차) → 상세 스펙 (2차) → 저장
+  - 2단계에서 예상 시간 안내
+
 ### 미완료 Task 요약
 
 - Task 070-B: ⚠️ 부분 구현 (자동↔수동 전환, 호환성 검증 미완성)
 - Task 070-C: ⚠️ 미완성 (3전략 비교, AI 추천 연동, 견적 확정)
-- 완료율: 93/95 = ~98% (미완료 2건: Phase 7 위저드 070-B/070-C)
+- Task 108~111: ⏳ Phase 17 RFP 2단계 분석 (4건)
+- 완료율: 93/99 = ~94%
